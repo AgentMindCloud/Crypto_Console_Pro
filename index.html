@@ -97,5 +97,953 @@
   </footer>
 
   <script src="app.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Crypto Console Pro — Multi-Exchange Futures Terminal</title>
+  <meta name="description" content="15 futures pairs, 7+ data streams, 3 exchanges — one screen. Real-time confluence signals for crypto futures traders.">
+  <meta property="og:title" content="Crypto Console Pro — See Every Setup Before The Crowd">
+  <meta property="og:description" content="Professional crypto futures terminal. 9 data streams. Binance, Bybit, OKX. One screen.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://cryptoconsole.app/app/">
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="Crypto Console Pro">
+  <meta name="twitter:description" content="Multiple streams. One signal. Free crypto futures terminal.">
+  <meta name="theme-color" content="#16171c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&amp;display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/logo_icon.png">
+  <link rel="apple-touch-icon" href="/logo_icon.png">
+  <link rel="manifest" href="/manifest.json">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html,body,#root{height:100%;width:100%;overflow:hidden}
+    html{height:-webkit-fill-available;}
+    body{min-height:-webkit-fill-available;}
+    body{font-family:'IBM Plex Mono','SF Mono',monospace;-webkit-font-smoothing:antialiased;transition:background .5s}
+    ::-webkit-scrollbar{width:4px;height:0}
+    ::-webkit-scrollbar-thumb{border-radius:4px}
+    ::-webkit-scrollbar-track{background:transparent}
+    @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes slideUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+    @keyframes loadSlide{0%{transform:translateX(-100%)}100%{transform:translateX(350%)}}
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+    #loading{position:fixed;inset:0;background:#16171c;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px}
+    #loading .logo{font-size:22px;font-weight:900;color:#c9a84c;letter-spacing:-1px;text-shadow:0 0 30px rgba(201,168,76,.3)}
+    #loading .tag{font-size:10px;color:#55555f}
+    #loading .bar{width:100px;height:2px;background:rgba(255,255,255,.04);border-radius:1px;overflow:hidden}
+    #loading .bar-fill{width:40%;height:100%;background:#c9a84c;border-radius:1px;animation:loadSlide 1.2s ease-in-out infinite}
+  </style>
+</head>
+<body>
+  <div id="loading"><div class="logo">&#9889; CONSOLE PRO</div><div class="tag">Multiple streams. One signal.</div><div class="bar"><div class="bar-fill"></div></div></div>
+  <div id="root"></div>
+  <script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script crossorigin="" src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.9/babel.min.js"></script>
+  <script type="text/babel">
+    const {useState,useEffect,useCallback,useMemo,useRef}=React;
+    const API="https://crypto-console-api.onrender.com";
+    const FN="'IBM Plex Mono','SF Mono',monospace";
+
+    /* ═══ GLASS THEME SYSTEM ═══ */
+    const TH={
+      dark:{
+        bg:"linear-gradient(170deg,#16171c 0%,#1a1b21 35%,#1e1f26 100%)",surface:"#1a1b21",
+        glass:"linear-gradient(145deg,rgba(40,42,52,.7) 0%,rgba(30,32,40,.4) 50%,rgba(35,37,46,.5) 100%)",
+        gBorder:"rgba(255,255,255,.07)",gHi:"linear-gradient(135deg,rgba(255,255,255,.08) 0%,rgba(255,255,255,.02) 35%,transparent 65%,rgba(255,255,255,.03) 100%)",
+        gHiEdge:"rgba(255,255,255,.08)",btnGlass:"linear-gradient(145deg,rgba(50,52,62,.8) 0%,rgba(35,37,45,.6) 100%)",
+        btnBorder:"rgba(255,255,255,.08)",btnHi:"linear-gradient(180deg,rgba(255,255,255,.07) 0%,transparent 100%)",
+        neuOut:"7px 7px 18px rgba(0,0,0,.35),-4px -4px 12px rgba(255,255,255,.03)",
+        neuBtn:"3px 3px 8px rgba(0,0,0,.4),-2px -2px 6px rgba(255,255,255,.04),inset 0 1px 1px rgba(255,255,255,.06)",
+        neuPress:"inset 3px 3px 8px rgba(0,0,0,.35),inset -2px -2px 5px rgba(255,255,255,.03)",
+        neuInset:"inset 3px 3px 10px rgba(0,0,0,.3),inset -2px -2px 8px rgba(255,255,255,.03)",
+        gold:"#c9a84c",goldDim:"rgba(201,168,76,.12)",goldGlow:"rgba(201,168,76,.4)",
+        goldBtnBg:"linear-gradient(145deg,rgba(201,168,76,.2) 0%,rgba(201,168,76,.08) 100%)",goldBtnBorder:"rgba(201,168,76,.3)",
+        text:"#e8e6e2",muted:"#7a7a86",dimmer:"#55555f",
+        grn:"#5cc98a",grnDim:"rgba(92,201,138,.12)",grnB:"rgba(92,201,138,.25)",grnG:"rgba(92,201,138,.3)",
+        red:"#e06060",redDim:"rgba(224,96,96,.12)",redB:"rgba(224,96,96,.25)",
+        pur:"#a080e0",purDim:"rgba(160,128,224,.12)",
+        gridDot:"rgba(255,255,255,.02)",glow1:"rgba(201,168,76,.06)",glow2:"rgba(100,130,255,.02)",
+        scrollThumb:"rgba(255,255,255,.06)",
+        tgTrack:"rgba(255,255,255,.06)",tgKnob:"linear-gradient(145deg,#35363f,#2a2b32)",
+        tgKnobSh:"2px 2px 6px rgba(0,0,0,.4),0 0 1px rgba(255,255,255,.1)",
+        tgSh:"inset 2px 2px 6px rgba(0,0,0,.3),inset -1px -1px 3px rgba(255,255,255,.04)",
+        glassNav:"rgba(22,23,28,.92)",metaCol:"#16171c",
+        shimmer:"linear-gradient(90deg,rgba(255,255,255,.02) 25%,rgba(255,255,255,.06) 50%,rgba(255,255,255,.02) 75%)",
+      },
+      light:{
+        bg:"linear-gradient(170deg,#efede9 0%,#e8e6e2 35%,#e2e0db 100%)",surface:"#e8e6e2",
+        glass:"linear-gradient(145deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.22) 50%,rgba(255,255,255,.32) 100%)",
+        gBorder:"rgba(255,255,255,.65)",gHi:"linear-gradient(135deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.08) 35%,transparent 65%,rgba(255,255,255,.12) 100%)",
+        gHiEdge:"rgba(255,255,255,.5)",btnGlass:"linear-gradient(145deg,rgba(255,255,255,.68) 0%,rgba(240,238,234,.45) 100%)",
+        btnBorder:"rgba(255,255,255,.7)",btnHi:"linear-gradient(180deg,rgba(255,255,255,.55) 0%,transparent 100%)",
+        neuOut:"7px 7px 16px rgba(0,0,0,.09),-5px -5px 14px rgba(255,255,255,.72)",
+        neuBtn:"4px 4px 10px rgba(0,0,0,.1),-3px -3px 8px rgba(255,255,255,.78),inset 0 1px 2px rgba(255,255,255,.6)",
+        neuPress:"inset 3px 3px 8px rgba(0,0,0,.08),inset -2px -2px 6px rgba(255,255,255,.5)",
+        neuInset:"inset 3px 3px 10px rgba(0,0,0,.06),inset -2px -2px 8px rgba(255,255,255,.55)",
+        gold:"#a78b3e",goldDim:"rgba(167,139,62,.1)",goldGlow:"rgba(167,139,62,.35)",
+        goldBtnBg:"linear-gradient(145deg,rgba(167,139,62,.18) 0%,rgba(167,139,62,.06) 100%)",goldBtnBorder:"rgba(167,139,62,.3)",
+        text:"#1a1a1a",muted:"#8c8c8c",dimmer:"#b5b5b5",
+        grn:"#2a8a56",grnDim:"rgba(42,138,86,.08)",grnB:"rgba(42,138,86,.2)",grnG:"rgba(42,138,86,.15)",
+        red:"#c04040",redDim:"rgba(192,64,64,.08)",redB:"rgba(192,64,64,.2)",
+        pur:"#7040c0",purDim:"rgba(112,64,192,.08)",
+        gridDot:"rgba(0,0,0,.03)",glow1:"rgba(167,139,62,.07)",glow2:"rgba(0,0,0,.02)",
+        scrollThumb:"rgba(0,0,0,.08)",
+        tgTrack:"rgba(0,0,0,.08)",tgKnob:"linear-gradient(145deg,#fff,#f0eee8)",
+        tgKnobSh:"2px 2px 6px rgba(0,0,0,.12),-1px -1px 3px rgba(255,255,255,.8)",
+        tgSh:"inset 2px 2px 6px rgba(0,0,0,.1),inset -1px -1px 4px rgba(255,255,255,.4)",
+        glassNav:"rgba(239,237,233,.92)",metaCol:"#efede9",
+        shimmer:"linear-gradient(90deg,rgba(0,0,0,.02) 25%,rgba(0,0,0,.05) 50%,rgba(0,0,0,.02) 75%)",
+      }
+    };
+
+    /* ═══ SVG ICONS ═══ */
+    const Ic=({children,size=18,color="currentColor",sw=1.6,...r})=>React.createElement("svg",{width:size,height:size,viewBox:"0 0 24 24",fill:"none",stroke:color,strokeWidth:sw,strokeLinecap:"round",strokeLinejoin:"round",...r},children);
+    const IcRadar=p=><Ic {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/><line x1="12" y1="2" x2="12" y2="6"/></Ic>;
+    const IcSignal=p=><Ic {...p}><rect x="2" y="16" width="4" height="6" rx="1"/><rect x="7" y="11" width="4" height="11" rx="1"/><rect x="12" y="6" width="4" height="16" rx="1"/><rect x="17" y="2" width="4" height="20" rx="1"/></Ic>;
+    const IcTarget=p=><Ic {...p}><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/></Ic>;
+    const IcCandle=p=><Ic {...p}><line x1="9" y1="3" x2="9" y2="7"/><rect x="7" y="7" width="4" height="8" rx="1"/><line x1="9" y1="15" x2="9" y2="21"/><line x1="16" y1="5" x2="16" y2="9"/><rect x="14" y="9" width="4" height="6" rx="1"/><line x1="16" y1="15" x2="16" y2="19"/></Ic>;
+    const IcSword=p=><Ic {...p}><path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/></Ic>;
+    const IcGrid=p=><Ic {...p}><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></Ic>;
+    const IcSun=p=><Ic {...p}><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></Ic>;
+    const IcMoon=p=><Ic {...p}><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></Ic>;
+    const IcUp=p=><Ic {...p}><line x1="7" y1="17" x2="17" y2="7"/><polyline points="7 7 17 7 17 17"/></Ic>;
+    const IcDown=p=><Ic {...p}><line x1="7" y1="7" x2="17" y2="17"/><polyline points="17 7 17 17 7 17"/></Ic>;
+    const IcFunding=p=><Ic {...p}><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></Ic>;
+    const IcScale=p=><Ic {...p}><path d="M16 3l5 5-5 5"/><path d="M21 8H9"/><path d="M8 21l-5-5 5-5"/><path d="M3 16h12"/></Ic>;
+    const IcOI=p=><Ic {...p}><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></Ic>;
+    const IcBolt=p=><Ic {...p}><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></Ic>;
+    const IcBook=p=><Ic {...p}><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></Ic>;
+    const IcGauge=p=><Ic {...p}><path d="M12 2a10 10 0 0 1 10 10"/><path d="M12 2a10 10 0 0 0-10 10"/><path d="M12 12l3.5-3.5"/><circle cx="12" cy="12" r="1"/></Ic>;
+    const IcTaker=p=><Ic {...p}><path d="M12 2v20"/><path d="M2 12h20"/><path d="M8 8l4-4 4 4"/><path d="M8 16l4 4 4-4"/></Ic>;
+    const IcTop=p=><Ic {...p}><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></Ic>;
+
+    /* ═══ GLASS HELPERS ═══ */
+    const glass=(t,x={})=>({background:t.glass,backdropFilter:"blur(20px) saturate(1.4)",WebkitBackdropFilter:"blur(20px) saturate(1.4)",border:"1px solid "+t.gBorder,borderRadius:16,boxShadow:t.neuOut,position:"relative",overflow:"hidden",...x});
+    const Refr=({t})=>React.createElement("div",{style:{position:"absolute",inset:0,borderRadius:"inherit",pointerEvents:"none",zIndex:1,background:t.gHi,borderTop:"1px solid "+t.gHiEdge,borderLeft:"1px solid "+t.gHiEdge}});
+
+    /* ═══ SKELETON LOADER ═══ */
+    function Skel({w="100%",h=14,r=6,t}){return <div style={{width:w,height:h,borderRadius:r,background:t.shimmer,backgroundSize:"200% 100%",animation:"shimmer 1.5s ease-in-out infinite"}}/>;}
+
+    const PAT=[
+      {id:"hammer",n:"Hammer",t:"bullish",c:1,wr:61,d:"Small body, long lower shadow. Buyers rejected lower prices."},
+      {id:"inverted_hammer",n:"Inv. Hammer",t:"bullish",c:1,wr:57,d:"Small body, long upper shadow at bottom of downtrend."},
+      {id:"shooting_star",n:"Shooting Star",t:"bearish",c:1,wr:58,d:"Small body, long upper shadow. Sellers rejected higher prices."},
+      {id:"doji",n:"Doji",t:"neutral",c:1,wr:50,d:"Open = Close. Market indecision."},
+      {id:"marubozu",n:"Marubozu",t:"dynamic",c:1,wr:64,d:"Full body, no shadows. Strong momentum."},
+      {id:"bullish_engulfing",n:"Bull Engulfing",t:"bullish",c:2,wr:63,d:"Large green engulfs prior red. Strong reversal."},
+      {id:"bearish_engulfing",n:"Bear Engulfing",t:"bearish",c:2,wr:62,d:"Large red engulfs prior green. Strong reversal."},
+      {id:"bullish_harami",n:"Bull Harami",t:"bullish",c:2,wr:55,d:"Small green inside prior large red."},
+      {id:"bearish_harami",n:"Bear Harami",t:"bearish",c:2,wr:54,d:"Small red inside prior large green."},
+      {id:"morning_star",n:"Morning Star",t:"bullish",c:3,wr:68,d:"Red, small body, green. Bottom reversal."},
+      {id:"evening_star",n:"Evening Star",t:"bearish",c:3,wr:66,d:"Green, small body, red. Top reversal."},
+      {id:"three_white_soldiers",n:"3 White Soldiers",t:"bullish",c:3,wr:72,d:"Three strong green candles. Powerful continuation."},
+      {id:"three_black_crows",n:"3 Black Crows",t:"bearish",c:3,wr:70,d:"Three strong red candles. Powerful continuation."},
+    ];
+    const COINS=[{sym:"BTCUSDT",sh:"BTC"},{sym:"ETHUSDT",sh:"ETH"},{sym:"SOLUSDT",sh:"SOL"},{sym:"BNBUSDT",sh:"BNB"},{sym:"XRPUSDT",sh:"XRP"},{sym:"ADAUSDT",sh:"ADA"},{sym:"DOGEUSDT",sh:"DOGE"},{sym:"AVAXUSDT",sh:"AVAX"},{sym:"DOTUSDT",sh:"DOT"},{sym:"LINKUSDT",sh:"LINK"},{sym:"UNIUSDT",sh:"UNI"},{sym:"ATOMUSDT",sh:"ATOM"},{sym:"FILUSDT",sh:"FIL"},{sym:"ARBUSDT",sh:"ARB"},{sym:"NEARUSDT",sh:"NEAR"}];
+
+    /* ═══ API — ALL DATA VIA RENDER BACKEND ═══ */
+    async function sF(url,ms=6000){const ac=new AbortController();const ti=setTimeout(()=>ac.abort(),ms);try{const r=await fetch(url,{signal:ac.signal});clearTimeout(ti);if(!r.ok)throw 0;return await r.json();}catch{clearTimeout(ti);return null;}}
+
+    async function fetchK(coin,ex,tf){
+      const p=await sF(API+"/api/klines/"+coin+"?exchange="+ex.toLowerCase()+"&interval="+tf+"&limit=10");
+      if(p&&p.candles&&p.candles.length)return p.candles.map(k=>({open:k.o,high:k.h,low:k.l,close:k.c,vol:k.v,time:k.t}));
+      /* Synthetic fallback — never call Binance directly from browser */
+      const bases={BTC:87500,ETH:2180,SOL:142,BNB:635,XRP:2.45,ADA:.78,DOGE:.21,AVAX:38.5,DOT:7.2,LINK:18.4,UNI:12.8,ATOM:9.1,FIL:5.6,ARB:1.15,NEAR:7.8};
+      const c=[],v=.02;let pr=bases[coin]||100;
+      for(let i=0;i<10;i++){const o=pr*(1+(Math.random()-.5)*v*.3),cl=o*(1+(Math.random()-.5)*v),h=Math.max(o,cl)*(1+Math.random()*v*.8),l=Math.min(o,cl)*(1-Math.random()*v*.8);pr=cl;c.push({open:o,high:h,low:l,close:cl,vol:Math.random()*1e6,time:Date.now()-(10-i)*36e5});}
+      return c;
+    }
+
+    /* ═══ FIXED fetchSig — maps to ACTUAL backend response shape ═══ */
+    async function fetchSig(coin){
+      const p=await sF(API+"/api/signals/"+coin);
+      if(p&&p.coin){
+        const f=p.funding||{};
+        const ls=p.longShort||{};
+        const tp=p.topTraders||{};
+        const tk=p.takerBuySell||{};
+        const oi=p.oi||{};
+        const lq=p.liquidation||{};
+        const ob=p.orderBook||{};
+        const fg=p.fearGreed||null;
+        return{
+          funding:{
+            rate:f.rate||0,
+            ratePct:f.ratePct||((f.rate||0)*100).toFixed(4),
+            signal:f.signal||"neutral",
+            markPrice:f.markPrice||null,
+            hasData:f.rate!=null&&f.rate!==0
+          },
+          longShort:{
+            longPct:ls.hasData?ls.longPct:null,
+            shortPct:ls.hasData?ls.shortPct:null,
+            signal:ls.signal||"neutral",
+            hasData:ls.hasData===true,
+            source:ls.source||""
+          },
+          topTraders:{
+            longPct:tp.hasData!==false?tp.longPct:null,
+            shortPct:tp.hasData!==false?tp.shortPct:null,
+            signal:tp.signal||"neutral",
+            hasData:tp.hasData!==false&&tp.longPct!=null&&tp.longPct!==50,
+            source:tp.source||""
+          },
+          takerBuySell:{
+            buyPct:tk.hasData?tk.buyPct:null,
+            sellPct:tk.hasData?tk.sellPct:null,
+            buyVol:tk.buyVol||0,
+            sellVol:tk.sellVol||0,
+            signal:tk.hasData?tk.signal:"no_data",
+            hasData:tk.hasData===true
+          },
+          oi:{
+            openInterest:oi.openInterest||null,
+            change:oi.change||0,
+            signal:oi.signal||"flat",
+            hasData:oi.openInterest!=null||Math.abs(oi.change||0)>0.01,
+            exchanges:oi.exchanges||{}
+          },
+          liquidation:{
+            longLiq:lq.longLiq||0,
+            shortLiq:lq.shortLiq||0,
+            longPct:lq.hasData?lq.longPct:null,
+            shortPct:lq.hasData?lq.shortPct:null,
+            signal:lq.signal||"neutral",
+            hasData:lq.hasData===true,
+            source:lq.source||""
+          },
+          orderBook:{
+            bidPct:ob.hasData?ob.bidPct:null,
+            askPct:ob.hasData?ob.askPct:null,
+            signal:ob.hasData?ob.signal:"no_data",
+            hasData:ob.hasData===true
+          },
+          fearGreed:fg,
+          activeStreamCount:p.activeStreamCount||0,
+          totalPossibleStreams:p.totalPossibleStreams||11,
+          activeStreams:p.activeStreams||[],
+          source:p.sources?"multi":"unknown"
+        };
+      }
+      return{funding:{rate:0,ratePct:"0.0000",signal:"neutral",markPrice:null,hasData:false},longShort:{longPct:null,shortPct:null,signal:"neutral",hasData:false},topTraders:{longPct:null,shortPct:null,signal:"neutral",hasData:false},takerBuySell:{buyPct:null,sellPct:null,buyVol:0,sellVol:0,signal:"no_data",hasData:false},oi:{openInterest:null,change:0,signal:"flat",hasData:false,exchanges:{}},liquidation:{longLiq:0,shortLiq:0,longPct:null,shortPct:null,signal:"neutral",hasData:false},orderBook:{bidPct:null,askPct:null,signal:"no_data",hasData:false},fearGreed:null,activeStreamCount:0,totalPossibleStreams:11,activeStreams:[],source:"offline"};
+    }
+
+    async function fetchFnG(){
+      const p=await sF(API+"/api/feargreed");
+      if(p&&p.value!=null)return{value:parseInt(p.value),label:p.label||"Unknown",src:p._source||"backend"};
+      /* Client-side fallback if backend F&G fails */
+      const d=await sF("https://api.alternative.me/fng/?limit=1",5000);
+      if(d&&d.data&&d.data[0])return{value:parseInt(d.data[0].value),label:d.data[0].value_classification,src:"alternative.me"};
+      return{value:50,label:"Neutral",src:"fallback"};
+    }
+
+    function detect(candles){if(!candles||candles.length<3)return null;const c=candles.slice(-3),bd=k=>Math.abs(k.close-k.open),uw=k=>k.high-Math.max(k.open,k.close),lw=k=>Math.min(k.open,k.close)-k.low,rg=k=>k.high-k.low||1e-8,bu=k=>k.close>k.open,be=k=>k.close<k.open,[p2,p1,L]=c;if(c.every(k=>bu(k)&&bd(k)>rg(k)*.5)&&L.close>p1.close&&p1.close>p2.close)return{id:"three_white_soldiers",str:88,sc:85};if(c.every(k=>be(k)&&bd(k)>rg(k)*.5)&&L.close<p1.close&&p1.close<p2.close)return{id:"three_black_crows",str:87,sc:84};if(be(p2)&&bd(p1)<rg(p1)*.3&&bu(L)&&L.close>(p2.open+p2.close)/2)return{id:"morning_star",str:82,sc:79};if(bu(p2)&&bd(p1)<rg(p1)*.3&&be(L)&&L.close<(p2.open+p2.close)/2)return{id:"evening_star",str:81,sc:78};if(be(p1)&&bu(L)&&L.open<=p1.close&&L.close>=p1.open&&bd(L)>bd(p1))return{id:"bullish_engulfing",str:76,sc:74};if(bu(p1)&&be(L)&&L.open>=p1.close&&L.close<=p1.open&&bd(L)>bd(p1))return{id:"bearish_engulfing",str:75,sc:73};if(be(p1)&&bu(L)&&L.open>p1.close&&L.close<p1.open&&bd(L)<bd(p1)*.6)return{id:"bullish_harami",str:62,sc:58};if(bu(p1)&&be(L)&&L.open<p1.close&&L.close>p1.open&&bd(L)<bd(p1)*.6)return{id:"bearish_harami",str:61,sc:57};if(lw(L)>bd(L)*2&&uw(L)<bd(L)*.5&&bd(L)>rg(L)*.05)return{id:"hammer",str:70,sc:67};if(uw(L)>bd(L)*2&&lw(L)<bd(L)*.5&&bd(L)>rg(L)*.05)return{id:"shooting_star",str:69,sc:66};if(bd(L)>rg(L)*.85)return{id:"marubozu",str:65,sc:63};if(bd(L)<rg(L)*.1)return{id:"doji",str:48,sc:45};return null;}
+
+    /* ═══ FIXED confCalc — respects hasData ═══ */
+    function confCalc(pat,sig,fng){
+      let b=0,r=0;
+      const pdb=pat?PAT.find(p=>p.id===pat.id):null;
+      if(pdb&&pdb.t==="bullish")b+=1.5;else if(pdb&&pdb.t==="bearish")r+=1.5;
+      if(sig.funding.hasData){if(sig.funding.signal==="bullish")b+=1.2;else if(sig.funding.signal==="bearish")r+=1.2;}
+      if(sig.longShort.hasData){if(sig.longShort.signal==="bullish")b+=1;else if(sig.longShort.signal==="bearish")r+=1;}
+      if(sig.takerBuySell.hasData){if(sig.takerBuySell.signal==="bullish")b+=1.3;else if(sig.takerBuySell.signal==="bearish")r+=1.3;}
+      if(sig.topTraders.hasData){if(sig.topTraders.signal==="bullish")b+=1.2;else if(sig.topTraders.signal==="bearish")r+=1.2;}
+      if(sig.oi.hasData){if(sig.oi.signal==="rising")b+=.8;else if(sig.oi.signal==="falling")r+=.5;}
+      if(sig.orderBook.hasData){if(sig.orderBook.signal==="bullish")b+=1;else if(sig.orderBook.signal==="bearish")r+=1;}
+      if(fng.value<30)b+=.7;else if(fng.value>70)r+=.7;
+      const mx=9*1.5,bs=Math.round(b/mx*100),rs=Math.round(r/mx*100);
+      return{bullScore:bs,bearScore:rs,direction:bs>rs+12?"LONG":rs>bs+12?"SHORT":"NEUTRAL",strength:Math.max(bs,rs)};
+    }
+
+    /* ═══ UI Components ═══ */
+    function CStrip({candles,width=120,height=44,t}){if(!candles||!candles.length)return null;const ps=candles.flatMap(c=>[c.high,c.low]),mn=Math.min(...ps),mx=Math.max(...ps),r=mx-mn||1,pd=3,cw=Math.min(10,(width-pd*2)/candles.length-2),gap=(width-pd*2-cw*candles.length)/Math.max(candles.length-1,1),y=p=>pd+(1-(p-mn)/r)*(height-pd*2);return React.createElement("svg",{width,height,style:{display:"block"}},candles.map((c,i)=>{const x=pd+i*(cw+gap),bl=c.close>=c.open,col=bl?t.grn:t.red,tp=y(Math.max(c.open,c.close)),bt=y(Math.min(c.open,c.close));return React.createElement("g",{key:i},React.createElement("line",{x1:x+cw/2,y1:y(c.high),x2:x+cw/2,y2:y(c.low),stroke:col,strokeWidth:1,opacity:.5}),React.createElement("rect",{x,y:tp,width:cw,height:Math.max(1,bt-tp),fill:col,rx:1,opacity:.8}));}));}
+
+    function PPill({pat,t}){if(!pat)return <span style={{color:t.dimmer,fontSize:10}}>No pattern</span>;const p=PAT.find(x=>x.id===pat.id)||{};const cls={bullish:{c:t.grn,bg:t.grnDim,b:t.grnB},bearish:{c:t.red,bg:t.redDim,b:t.redB},neutral:{c:t.gold,bg:t.goldDim,b:t.goldBtnBorder},dynamic:{c:t.gold,bg:t.goldDim,b:t.goldBtnBorder}};const s=cls[p.t]||cls.neutral;return <span style={{display:"inline-flex",alignItems:"center",gap:3,background:s.bg,border:"1px solid "+s.b,color:s.c,padding:"2px 7px",borderRadius:999,fontSize:10,fontWeight:700,whiteSpace:"nowrap"}}>{p.n}</span>;}
+
+    function DBadge({dir,sm,t}){const cfg={LONG:{bg:t.grnDim,b:t.grnB,c:t.grn},SHORT:{bg:t.redDim,b:t.redB,c:t.red},NEUTRAL:{bg:"transparent",b:t.gBorder,c:t.dimmer}};const s=cfg[dir]||cfg.NEUTRAL;const ic=dir==="LONG"?<IcUp size={sm?8:10} color={s.c} sw={2.5}/>:dir==="SHORT"?<IcDown size={sm?8:10} color={s.c} sw={2.5}/>:null;return <span style={{display:"inline-flex",alignItems:"center",gap:2,background:s.bg,border:"1px solid "+s.b,color:s.c,padding:sm?"1px 5px":"2px 8px",borderRadius:8,fontSize:sm?8:10,fontWeight:800,letterSpacing:.5}}>{ic} {dir}</span>;}
+
+    function GBtn({children,active,onClick,t,style={}}){return <button onClick={onClick} style={{background:active?t.goldBtnBg:t.btnGlass,border:"1px solid "+(active?t.goldBtnBorder:t.btnBorder),borderRadius:10,padding:"5px 12px",fontSize:10,fontWeight:600,color:active?t.gold:t.muted,cursor:"pointer",fontFamily:FN,boxShadow:active?t.neuPress:t.neuBtn,transition:"all .15s",position:"relative",overflow:"hidden",...style}}><div style={{position:"absolute",top:0,left:0,right:0,height:"48%",borderRadius:"inherit",background:t.btnHi,pointerEvents:"none"}}/><span style={{position:"relative",zIndex:1}}>{children}</span></button>;}
+
+    function TToggle({dark,onToggle,t}){return <button onClick={onToggle} style={{width:56,height:28,borderRadius:14,border:"1px solid "+t.gBorder,background:t.tgTrack,boxShadow:t.tgSh,cursor:"pointer",position:"relative",padding:0,transition:"all .4s"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"50%",borderRadius:"inherit",background:"linear-gradient(180deg,rgba(255,255,255,.1) 0%,transparent 100%)",pointerEvents:"none"}}/><div style={{width:22,height:22,borderRadius:11,position:"absolute",top:2,left:dark?31:3,background:t.tgKnob,boxShadow:t.tgKnobSh,transition:"left .35s cubic-bezier(.4,0,.2,1)",display:"flex",alignItems:"center",justifyContent:"center"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"50%",borderRadius:"inherit",background:"linear-gradient(180deg,rgba(255,255,255,.3) 0%,transparent 100%)",pointerEvents:"none"}}/>{dark?<IcMoon size={11} color={t.gold} sw={2} style={{position:"relative",zIndex:1}}/>:<IcSun size={11} color={t.gold} sw={2} style={{position:"relative",zIndex:1}}/>}</div></button>;}
+
+    function SBar({sc,t}){if(!sc)return null;const col=sc>=75?t.grn:sc>=55?t.gold:t.dimmer;return <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:36,height:3,background:t.gBorder,borderRadius:2,boxShadow:t.neuInset}}><div style={{width:sc+"%",height:"100%",background:col,borderRadius:2,transition:"width .5s"}}/></div><span style={{fontSize:9,color:col,fontWeight:700}}>{sc}</span></div>;}
+
+    /* ═══ FIXED SigBarVis — handles null (no data) ═══ */
+    function SigBarVis({label,pA,pB,lA,lB,cA,cB,t,noData}){
+      if(noData||pA==null||pB==null){
+        return <div style={{marginBottom:8}}>
+          <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:9,fontWeight:700,color:t.dimmer}}>{label}</span><span style={{fontSize:9,fontWeight:600,color:t.dimmer}}>—</span></div>
+          <div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",boxShadow:t.neuInset}}><div style={{width:"100%",background:t.gBorder,borderRadius:3}}/></div>
+          <div style={{fontSize:8,color:t.dimmer,marginTop:3,textAlign:"center",fontStyle:"italic"}}>Waiting for data...</div>
+        </div>;
+      }
+      return <div style={{marginBottom:8}}><div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}><span style={{fontSize:9,fontWeight:700,color:t.dimmer}}>{label}</span><span style={{fontSize:9,fontWeight:600,color:t.muted}}>{pA.toFixed(1)}% / {pB.toFixed(1)}%</span></div><div style={{display:"flex",height:6,borderRadius:3,overflow:"hidden",gap:1,boxShadow:t.neuInset}}><div style={{width:pA+"%",background:cA,borderRadius:"3px 0 0 3px"}}/><div style={{width:pB+"%",background:cB,borderRadius:"0 3px 3px 0"}}/></div><div style={{display:"flex",justifyContent:"space-between",marginTop:2}}><span style={{fontSize:8,color:cA,fontWeight:600}}>{lA}</span><span style={{fontSize:8,color:cB,fontWeight:600}}>{lB}</span></div></div>;
+    }
+
+    function FnGGauge({value,label,src,t}){const col=value<=25?t.red:value<=45?"#e08080":value<=55?t.gold:value<=75?"#60c090":t.grn;return <div style={{...glass(t,{borderRadius:14,padding:"10px 14px"})}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:9,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase"}}><IcGauge size={11} color={t.gold} sw={2} style={{verticalAlign:"-2px",marginRight:4}}/>Fear &amp; Greed</span>{src&&src!=="fallback"&&<span style={{fontSize:7,color:t.dimmer,background:"rgba(255,255,255,.04)",padding:"1px 5px",borderRadius:4,border:"1px solid "+t.gBorder}}>{src}</span>}</div><div style={{display:"flex",alignItems:"center",gap:12}}><div style={{position:"relative",width:48,height:48}}><svg width={48} height={48} viewBox="0 0 48 48"><circle cx={24} cy={24} r={20} fill="none" stroke={t.gBorder} strokeWidth={4}/><circle cx={24} cy={24} r={20} fill="none" stroke={col} strokeWidth={4} strokeDasharray={value*1.256+" 999"} strokeLinecap="round" transform="rotate(-90 24 24)" style={{transition:"stroke-dasharray .8s",filter:"drop-shadow(0 0 4px "+col+"40)"}}/></svg><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:14,fontWeight:900,color:col}}>{value}</span></div></div><div><div style={{fontSize:13,fontWeight:800,color:col}}>{label}</div><div style={{fontSize:10,color:t.muted,marginTop:1}}>{value<=25?"Extreme fear \u2192 contrarian bullish":value<=45?"Fear \u2192 slightly bullish":value<=55?"Neutral":value<=75?"Greed \u2192 slightly bearish":"Extreme greed \u2192 contrarian bearish"}</div></div></div></div></div>;}
+
+    /* ═══ MARKET PULSE — Animated Trade Flow ═══ */
+    function MarketPulse({coins,t}){
+      const canvasRef=useRef(null);
+      const particles=useRef([]);
+      const animRef=useRef(null);
+      const btc=coins.find(c=>c.sh==="BTC");
+      const tk=btc&&btc.sig&&btc.sig.takerBuySell||{buyPct:50,sellPct:50,hasData:false};
+      const price=btc?btc.price:0;
+      const change=btc?btc.change:0;
+      const candles=btc?btc.candles:[];
+      const buyRatio=tk.hasData?(tk.buyPct/100):0.5;
+
+      useEffect(()=>{
+        const cv=canvasRef.current;if(!cv)return;
+        const ctx=cv.getContext("2d");
+        const dpr=window.devicePixelRatio||1;
+        const W=cv.clientWidth;const H=cv.clientHeight;
+        cv.width=W*dpr;cv.height=H*dpr;
+        ctx.scale(dpr,dpr);
+        const isDark=t.text==="#e8e6e2";
+        const grnC=isDark?"92,201,138":"42,138,86";
+        const redC=isDark?"224,96,96":"192,64,64";
+        const goldC=isDark?"201,168,76":"167,139,62";
+        const bgA=isDark?0.12:0.06;
+        const midX=W/2;const midY=H*0.42;
+        const ps=particles.current;
+
+        /* spawn particles */
+        const spawn=()=>{
+          if(ps.length>120)return;
+          const isBuy=Math.random()<buyRatio;
+          const angle=(Math.random()-.5)*1.2+(isBuy?0:Math.PI);
+          const speed=1.2+Math.random()*2.5;
+          const size=1.5+Math.random()*3;
+          ps.push({x:midX,y:midY+Math.random()*16-8,vx:Math.cos(angle)*speed,vy:Math.sin(angle)*speed*0.4,size,life:1,decay:0.006+Math.random()*0.008,buy:isBuy});
+        };
+
+        /* draw mini price chart at bottom */
+        const drawChart=(ctx)=>{
+          if(!candles||candles.length<2)return;
+          const chartY=H*0.72;const chartH=H*0.22;const chartW=W-32;const startX=16;
+          const prices=candles.map(c=>c.close);
+          const mn=Math.min(...prices);const mx=Math.max(...prices);const rng=mx-mn||1;
+          ctx.beginPath();
+          ctx.strokeStyle="rgba("+goldC+",0.35)";
+          ctx.lineWidth=1.5;
+          ctx.shadowColor="rgba("+goldC+",0.3)";
+          ctx.shadowBlur=6;
+          prices.forEach((p,i)=>{
+            const px=startX+i/(prices.length-1)*chartW;
+            const py=chartY+chartH-(p-mn)/rng*chartH;
+            i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+          });
+          ctx.stroke();
+          ctx.shadowBlur=0;
+          /* fill under */
+          const lastPx=startX+(prices.length-1)/(prices.length-1)*chartW;
+          ctx.lineTo(lastPx,chartY+chartH);ctx.lineTo(startX,chartY+chartH);ctx.closePath();
+          const grd=ctx.createLinearGradient(0,chartY,0,chartY+chartH);
+          grd.addColorStop(0,"rgba("+goldC+",0.08)");grd.addColorStop(1,"rgba("+goldC+",0)");
+          ctx.fillStyle=grd;ctx.fill();
+          /* price dot at end */
+          const lastP=prices[prices.length-1];
+          const dotY=chartY+chartH-(lastP-mn)/rng*chartH;
+          ctx.beginPath();ctx.arc(lastPx,dotY,3,0,Math.PI*2);
+          ctx.fillStyle="rgba("+goldC+",0.9)";ctx.fill();
+          ctx.beginPath();ctx.arc(lastPx,dotY,6,0,Math.PI*2);
+          ctx.fillStyle="rgba("+goldC+",0.15)";ctx.fill();
+        };
+
+        const draw=()=>{
+          ctx.clearRect(0,0,W,H);
+          /* center glow */
+          const glowR=ctx.createRadialGradient(midX,midY,0,midX,midY,80);
+          glowR.addColorStop(0,"rgba("+goldC+","+bgA+")");
+          glowR.addColorStop(1,"transparent");
+          ctx.fillStyle=glowR;ctx.fillRect(0,0,W,H);
+
+          /* buy/sell flow indicator lines */
+          ctx.globalAlpha=0.04;
+          ctx.fillStyle="rgba("+grnC+",1)";
+          ctx.fillRect(midX,midY-20,W/2-20,40);
+          ctx.fillStyle="rgba("+redC+",1)";
+          ctx.fillRect(20,midY-20,midX-20,40);
+          ctx.globalAlpha=1;
+
+          /* spawn new particles */
+          for(let i=0;i<3;i++)spawn();
+
+          /* update & draw particles */
+          for(let i=ps.length-1;i>=0;i--){
+            const p=ps[i];
+            p.x+=p.vx;p.y+=p.vy;p.life-=p.decay;
+            if(p.life<=0||p.x<-10||p.x>W+10){ps.splice(i,1);continue;}
+            const col=p.buy?grnC:redC;
+            ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life,0,Math.PI*2);
+            ctx.fillStyle="rgba("+col+","+p.life*0.7+")";ctx.fill();
+            /* glow trail */
+            ctx.beginPath();ctx.arc(p.x,p.y,p.size*p.life*2.5,0,Math.PI*2);
+            ctx.fillStyle="rgba("+col+","+p.life*0.08+")";ctx.fill();
+          }
+
+          /* center price text */
+          const fmtP=price<1?price.toFixed(4):price<100?price.toFixed(2):price.toLocaleString(undefined,{maximumFractionDigits:0});
+          ctx.textAlign="center";ctx.textBaseline="middle";
+          ctx.font="700 20px 'IBM Plex Mono',monospace";
+          ctx.shadowColor="rgba("+goldC+",0.5)";ctx.shadowBlur=12;
+          ctx.fillStyle=isDark?"#e8e6e2":"#1a1a1a";
+          ctx.fillText("$"+fmtP,midX,midY-2);
+          ctx.shadowBlur=0;
+          ctx.font="700 10px 'IBM Plex Mono',monospace";
+          const chgCol=change>=0?grnC:redC;
+          ctx.fillStyle="rgba("+chgCol+",0.9)";
+          ctx.fillText((change>=0?"+":"")+change.toFixed(2)+"%",midX,midY+16);
+          /* BTC label */
+          ctx.font="600 8px 'IBM Plex Mono',monospace";
+          ctx.fillStyle="rgba("+goldC+",0.5)";
+          ctx.fillText("BTC/USDT",midX,midY-18);
+          /* Buy/Sell labels */
+          ctx.font="700 9px 'IBM Plex Mono',monospace";
+          if(tk.hasData){
+            ctx.fillStyle="rgba("+grnC+",0.6)";ctx.textAlign="right";
+            ctx.fillText("BUY "+tk.buyPct.toFixed(0)+"%",W-12,midY+32);
+            ctx.fillStyle="rgba("+redC+",0.6)";ctx.textAlign="left";
+            ctx.fillText("SELL "+tk.sellPct.toFixed(0)+"%",12,midY+32);
+          }
+          ctx.textAlign="center";
+
+          drawChart(ctx);
+          animRef.current=requestAnimationFrame(draw);
+        };
+        draw();
+        return()=>{if(animRef.current)cancelAnimationFrame(animRef.current);};
+      },[coins,t]);
+
+      return <div style={{...glass(t,{borderRadius:14,padding:0,margin:"6px 14px 2px",overflow:"hidden"})}}>
+        <Refr t={t}/>
+        <canvas ref={canvasRef} style={{width:"100%",height:160,display:"block",position:"relative",zIndex:2}}/>
+      </div>;
+    }
+
+    /* ═══ DATA STRIP — Market Overview Metrics ═══ */
+    function DataStrip({coins,t}){
+      const agg=useMemo(()=>{
+        if(!coins.length)return null;
+        let totalLong=0,totalShort=0,lsCount=0;
+        let totalFunding=0,fCount=0;
+        let totalOiChange=0,oiCount=0;
+        let totalLiqLong=0,totalLiqShort=0;
+        coins.forEach(c=>{
+          const s=c.sig||{};
+          if(s.longShort&&s.longShort.hasData){totalLong+=s.longShort.longPct;totalShort+=s.longShort.shortPct;lsCount++;}
+          if(s.funding&&s.funding.hasData){totalFunding+=s.funding.rate;fCount++;}
+          if(s.oi&&s.oi.hasData){totalOiChange+=s.oi.change;oiCount++;}
+          if(s.liquidation&&s.liquidation.hasData){totalLiqLong+=s.liquidation.longLiq;totalLiqShort+=s.liquidation.shortLiq;}
+        });
+        const avgLS=lsCount>0?Math.round(totalLong/lsCount):null;
+        const avgFunding=fCount>0?(totalFunding/fCount):null;
+        const avgOI=oiCount>0?(totalOiChange/oiCount):null;
+        const totalLiq=totalLiqLong+totalLiqShort;
+        return{avgLS,avgFunding,avgOI,totalLiq,totalLiqLong,totalLiqShort};
+      },[coins]);
+      if(!agg)return null;
+      const fmtK=v=>v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"K":v.toFixed(0);
+      const items=[
+        {label:"Avg L/S",value:agg.avgLS!=null?agg.avgLS+"% L":"—",color:agg.avgLS>55?t.grn:agg.avgLS<45?t.red:t.muted},
+        {label:"Avg Funding",value:agg.avgFunding!=null?(agg.avgFunding>0?"+":"")+(agg.avgFunding*100).toFixed(3)+"%":"—",color:agg.avgFunding>0.001?t.red:agg.avgFunding<-0.0005?t.grn:t.muted},
+        {label:"Avg OI \u0394",value:agg.avgOI!=null?(agg.avgOI>0?"+":"")+agg.avgOI.toFixed(1)+"%":"—",color:agg.avgOI>2?t.grn:agg.avgOI<-2?t.red:t.muted},
+        {label:"24h Liqs",value:agg.totalLiq>0?"$"+fmtK(agg.totalLiq):"—",color:agg.totalLiqLong>agg.totalLiqShort?t.red:t.grn},
+      ];
+      return <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr 1fr",gap:6,padding:"6px 14px 2px"}}>
+        {items.map(it=><div key={it.label} style={{...glass(t,{borderRadius:10,padding:"6px 6px 5px",textAlign:"center"})}}>
+          <Refr t={t}/>
+          <div style={{position:"relative",zIndex:2}}>
+            <div style={{fontSize:7,fontWeight:700,color:t.dimmer,letterSpacing:.5,textTransform:"uppercase",marginBottom:2}}>{it.label}</div>
+            <div style={{fontSize:11,fontWeight:800,color:it.color}}>{it.value}</div>
+          </div>
+        </div>)}
+      </div>;
+    }
+
+    /* ═══ SIGNALS TAB — with Aggregate Gauge + colored text ═══ */
+    function SignalsTab({coins,t}){
+      const[sub,setSub]=useState("taker");
+      const subs=[{id:"taker",l:"Taker",ic:IcTaker},{id:"top",l:"Top Traders",ic:IcTop},{id:"funding",l:"Funding",ic:IcFunding},{id:"ls",l:"L/S",ic:IcScale},{id:"oi",l:"OI",ic:IcOI},{id:"liq",l:"Liquids",ic:IcBolt},{id:"book",l:"Book",ic:IcBook}];
+      const sorted=[...coins].sort((a,b)=>{if(sub==="funding")return Math.abs((b.sig||{}).funding&&b.sig.funding.rate||0)-Math.abs((a.sig||{}).funding&&a.sig.funding.rate||0);return(b.pat&&b.pat.sc||0)-(a.pat&&a.pat.sc||0);});
+      const fmt=p=>p<1?p.toFixed(4):p<100?p.toFixed(2):p.toLocaleString(undefined,{maximumFractionDigits:0});
+      const fmtVol=v=>v>=1e9?(v/1e9).toFixed(1)+"B":v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"K":v.toFixed(0);
+
+      /* Aggregate signal for current sub-tab */
+      const agg=useMemo(()=>{
+        let bullish=0,bearish=0,neutral=0,total=0;
+        let sumA=0,sumB=0,dataCount=0;
+        coins.forEach(c=>{
+          const sig=c.sig||{};
+          if(sub==="taker"){const d=sig.takerBuySell;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;sumA+=d.buyPct;sumB+=d.sellPct;dataCount++;}}
+          else if(sub==="top"){const d=sig.topTraders;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;sumA+=d.longPct;sumB+=d.shortPct;dataCount++;}}
+          else if(sub==="funding"){const d=sig.funding;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;}}
+          else if(sub==="ls"){const d=sig.longShort;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;sumA+=d.longPct;sumB+=d.shortPct;dataCount++;}}
+          else if(sub==="oi"){const d=sig.oi;if(d&&d.hasData){total++;if(d.signal==="rising")bullish++;else if(d.signal==="falling")bearish++;else neutral++;}}
+          else if(sub==="liq"){const d=sig.liquidation;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;}}
+          else if(sub==="book"){const d=sig.orderBook;if(d&&d.hasData){total++;if(d.signal==="bullish")bullish++;else if(d.signal==="bearish")bearish++;else neutral++;sumA+=d.bidPct||50;sumB+=d.askPct||50;dataCount++;}}
+        });
+        const avgA=dataCount>0?sumA/dataCount:50;const avgB=dataCount>0?sumB/dataCount:50;
+        const bias=bullish>bearish?"bullish":bearish>bullish?"bearish":"neutral";
+        return{bullish,bearish,neutral,total,avgA,avgB,bias};
+      },[coins,sub]);
+
+      const biasCol=agg.bias==="bullish"?t.grn:agg.bias==="bearish"?t.red:t.gold;
+      const biasLabel=agg.bias==="bullish"?"BULLISH":agg.bias==="bearish"?"BEARISH":"NEUTRAL";
+      const subLabels={taker:"Taker Buy/Sell",top:"Top Traders L/S",funding:"Funding Rate",ls:"Long/Short Ratio",oi:"Open Interest",liq:"Liquidations",book:"Order Book Depth"};
+      const pairLabels={taker:["Buy","Sell"],top:["Long","Short"],funding:null,ls:["Longs","Shorts"],oi:null,liq:["Long Liqs","Short Liqs"],book:["Bids","Asks"]};
+      const pl=pairLabels[sub];
+
+      return <div>
+        <div style={{display:"flex",gap:4,padding:"10px 14px 6px",overflowX:"auto",scrollbarWidth:"none"}}>{subs.map(s=>{const Ic2=s.ic;return <GBtn key={s.id} t={t} active={sub===s.id} onClick={()=>setSub(s.id)}><Ic2 size={10} color={sub===s.id?t.gold:t.muted} sw={2} style={{verticalAlign:"-1px",marginRight:3}}/>{s.l}</GBtn>;})}</div>
+
+        {/* ═══ AGGREGATE GAUGE — big interactive header ═══ */}
+        <div style={{padding:"6px 14px 4px"}}>
+          <div style={{...glass(t,{borderRadius:16,padding:"14px 14px 12px"}),borderTop:"2px solid "+biasCol}}>
+            <Refr t={t}/>
+            <div style={{position:"relative",zIndex:2}}>
+              <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+                <div><div style={{fontSize:8,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase"}}>{subLabels[sub]} Overview</div>
+                  <div style={{fontSize:22,fontWeight:900,color:biasCol,marginTop:2,textShadow:"0 0 16px "+(agg.bias==="bullish"?t.grnG:agg.bias==="bearish"?t.redB:t.goldGlow)}}>{biasLabel}</div>
+                </div>
+                <div style={{display:"flex",gap:10,alignItems:"center"}}>
+                  <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:900,color:t.grn}}>{agg.bullish}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>BULL</div></div>
+                  <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:900,color:t.dimmer}}>{agg.neutral}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>NEUT</div></div>
+                  <div style={{textAlign:"center"}}><div style={{fontSize:18,fontWeight:900,color:t.red}}>{agg.bearish}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>BEAR</div></div>
+                </div>
+              </div>
+              {/* Animated strength bar */}
+              <div style={{display:"flex",height:8,borderRadius:4,overflow:"hidden",gap:1,boxShadow:t.neuInset,marginBottom:6}}>
+                <div style={{width:agg.total>0?(agg.bullish/agg.total*100)+"%":"33%",background:t.grn,borderRadius:"4px 0 0 4px",transition:"width .6s ease",boxShadow:"0 0 8px "+t.grnG}}/>
+                <div style={{width:agg.total>0?(agg.neutral/agg.total*100)+"%":"34%",background:t.gBorder,transition:"width .6s ease"}}/>
+                <div style={{width:agg.total>0?(agg.bearish/agg.total*100)+"%":"33%",background:t.red,borderRadius:"0 4px 4px 0",transition:"width .6s ease",boxShadow:"0 0 8px "+t.redB}}/>
+              </div>
+              {/* Aggregate ratio bar if applicable */}
+              {pl&&agg.avgA!==50&&<div>
+                <div style={{display:"flex",justifyContent:"space-between",marginBottom:3}}>
+                  <span style={{fontSize:9,fontWeight:700,color:t.grn}}>{pl[0]} {agg.avgA.toFixed(1)}%</span>
+                  <span style={{fontSize:8,color:t.dimmer}}>Market Avg</span>
+                  <span style={{fontSize:9,fontWeight:700,color:t.red}}>{pl[1]} {agg.avgB.toFixed(1)}%</span>
+                </div>
+                <div style={{display:"flex",height:5,borderRadius:3,overflow:"hidden",gap:1,boxShadow:t.neuInset}}>
+                  <div style={{width:agg.avgA+"%",background:t.grn,borderRadius:"3px 0 0 3px",transition:"width .5s"}}/>
+                  <div style={{width:agg.avgB+"%",background:t.red,borderRadius:"0 3px 3px 0",transition:"width .5s"}}/>
+                </div>
+              </div>}
+              <div style={{fontSize:8,color:t.dimmer,marginTop:6,textAlign:"center"}}>{agg.total} coins with data \u2022 {coins.length-agg.total} awaiting</div>
+            </div>
+          </div>
+        </div>
+
+        {/* ═══ PER-COIN CARDS ═══ */}
+        <div style={{padding:"6px 14px 14px"}}>{sorted.map((c,i)=>{const sig=c.sig||{};const fr=sig.funding||{rate:0,ratePct:"0.0000",hasData:false};const ls=sig.longShort||{hasData:false};const oi=sig.oi||{change:0,hasData:false};const lq=sig.liquidation||{hasData:false};const ob=sig.orderBook||{hasData:false};const tk=sig.takerBuySell||{hasData:false};const tp=sig.topTraders||{hasData:false};
+          /* Determine signal color for this coin's current sub */
+          const getSigCol=()=>{if(sub==="taker")return tk.hasData?tk.signal==="bullish"?t.grn:tk.signal==="bearish"?t.red:t.muted:t.dimmer;if(sub==="top")return tp.hasData?tp.signal==="bullish"?t.grn:tp.signal==="bearish"?t.red:t.muted:t.dimmer;if(sub==="funding")return fr.hasData?fr.signal==="bullish"?t.grn:fr.signal==="bearish"?t.red:t.muted:t.dimmer;if(sub==="ls")return ls.hasData?ls.signal==="bullish"?t.grn:ls.signal==="bearish"?t.red:t.muted:t.dimmer;if(sub==="oi")return oi.hasData?oi.signal==="rising"?t.grn:oi.signal==="falling"?t.red:t.muted:t.dimmer;if(sub==="liq")return lq.hasData?lq.signal==="bullish"?t.grn:lq.signal==="bearish"?t.red:t.muted:t.dimmer;if(sub==="book")return ob.hasData?ob.signal==="bullish"?t.grn:ob.signal==="bearish"?t.red:t.muted:t.dimmer;return t.dimmer;};
+          const sigCol=getSigCol();
+          return <div key={c.sh} style={{...glass(t,{borderRadius:14,padding:"10px 12px",marginBottom:8}),animation:"slideUp .3s ease "+i*.04+"s both"}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:13,fontWeight:800,color:t.text}}>{c.sh}</span><span style={{fontSize:10,color:t.muted}}>${fmt(c.price)}</span></div><DBadge dir={c.conf.direction} sm t={t}/></div>
+            {sub==="taker"&&<div>
+              <SigBarVis label="Taker Buy / Sell" pA={tk.hasData?tk.buyPct:null} pB={tk.hasData?tk.sellPct:null} lA="Buy" lB="Sell" cA={t.grn} cB={t.red} t={t} noData={!tk.hasData}/>
+              <div style={{fontSize:9,fontWeight:700,color:sigCol,background:tk.signal==="bullish"?t.grnDim:tk.signal==="bearish"?t.redDim:t.goldDim,padding:"4px 8px",borderRadius:8,boxShadow:t.neuInset}}>{!tk.hasData?"Taker data unavailable — stream connecting...":tk.signal==="bullish"?"\u2191 Buyers dominating \u2014 bullish pressure":tk.signal==="bearish"?"\u2193 Sellers dominating \u2014 bearish pressure":"Balanced taker flow"}</div>
+            </div>}
+            {sub==="top"&&<div>
+              <SigBarVis label="Top Traders Long / Short" pA={tp.hasData?tp.longPct:null} pB={tp.hasData?tp.shortPct:null} lA="Long" lB="Short" cA={t.grn} cB={t.red} t={t} noData={!tp.hasData}/>
+              <div style={{fontSize:9,fontWeight:700,color:sigCol,background:tp.signal==="bullish"?t.grnDim:tp.signal==="bearish"?t.redDim:t.goldDim,padding:"4px 8px",borderRadius:8,boxShadow:t.neuInset}}>{!tp.hasData?"Top trader data unavailable":tp.signal==="bullish"?"\u2191 Top traders net long \u2014 bullish":tp.signal==="bearish"?"\u2193 Top traders net short \u2014 bearish":"Top traders balanced"}</div>
+            </div>}
+            {sub==="funding"&&<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:10,color:t.muted}}>Current Rate</span><span style={{fontSize:14,fontWeight:900,color:!fr.hasData?t.dimmer:fr.rate>.001?t.red:fr.rate<-.0005?t.grn:t.muted}}>{fr.hasData?(fr.ratePct||((fr.rate||0)*100).toFixed(4))+"%":"—"}</span></div>{fr.markPrice&&<div style={{fontSize:10,color:t.muted,marginBottom:4}}>Mark: ${Number(fr.markPrice).toLocaleString()}</div>}<div style={{fontSize:9,fontWeight:700,color:sigCol,background:fr.signal==="bullish"?t.grnDim:fr.signal==="bearish"?t.redDim:t.goldDim,padding:"4px 8px",borderRadius:8,boxShadow:t.neuInset}}>{!fr.hasData?"Funding data connecting...":fr.signal==="bearish"?"\u2193 Positive = longs pay shorts \u2014 bearish":fr.signal==="bullish"?"\u2191 Negative = shorts pay longs \u2014 bullish":"Neutral funding"}</div></div>}
+            {sub==="ls"&&<SigBarVis label="Long / Short Ratio" pA={ls.hasData?ls.longPct:null} pB={ls.hasData?ls.shortPct:null} lA="Longs" lB="Shorts" cA={t.grn} cB={t.red} t={t} noData={!ls.hasData}/>}
+            {sub==="oi"&&<div><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:6}}><span style={{fontSize:10,color:t.muted}}>OI Change</span><span style={{fontSize:14,fontWeight:900,color:!oi.hasData?t.dimmer:oi.change>5?t.grn:oi.change<-5?t.red:t.muted}}>{oi.hasData?(oi.change>0?"+":"")+oi.change.toFixed(1)+"%":"—"}</span></div>{oi.openInterest&&<div style={{fontSize:10,color:t.muted,marginBottom:4}}>Total OI: ${Number(oi.openInterest).toLocaleString()}</div>}{oi.exchanges&&Object.keys(oi.exchanges).length>0&&!oi.openInterest&&<div style={{fontSize:10,color:t.muted,marginBottom:4}}>Binance OI: ${Number(oi.exchanges.Binance||0).toLocaleString()}</div>}<div style={{height:4,borderRadius:2,overflow:"hidden",boxShadow:t.neuInset}}><div style={{width:oi.hasData?Math.min(100,Math.abs(oi.change)*5+50)+"%":"50%",height:"100%",background:!oi.hasData?t.gBorder:oi.change>0?t.grn:t.red,borderRadius:2,transition:"width .5s"}}/></div></div>}
+            {sub==="liq"&&<div>
+              <SigBarVis label="Liquidations Long / Short" pA={lq.hasData?lq.longPct:null} pB={lq.hasData?lq.shortPct:null} lA={"Longs"+(lq.hasData?" $"+fmtVol(lq.longLiq):"")} lB={"Shorts"+(lq.hasData?" $"+fmtVol(lq.shortLiq):"")} cA={t.red} cB={t.grn} t={t} noData={!lq.hasData}/>
+              {lq.hasData&&lq.source&&<div style={{fontSize:8,color:t.dimmer,textAlign:"right",marginTop:-4}}>via {lq.source}</div>}
+            </div>}
+            {sub==="book"&&<SigBarVis label="Order Book" pA={ob.hasData?ob.bidPct:null} pB={ob.hasData?ob.askPct:null} lA="Bids" lB="Asks" cA={t.grn} cB={t.red} t={t} noData={!ob.hasData}/>}
+          </div></div>})}</div></div>;
+    }
+
+    /* ═══ FIXED WHEN TAB — respects hasData ═══ */
+    function WhenTab({coins,fng,t}){
+      const[sel,setSel]=useState("BTC");const coin=coins.find(c=>c.sh===sel)||coins[0];
+      if(!coin)return <div style={{padding:20,textAlign:"center",color:t.dimmer}}>Loading...</div>;
+      const sig=coin.sig||{funding:{signal:"neutral",rate:0,ratePct:"0.0000",hasData:false},longShort:{signal:"neutral",hasData:false},oi:{signal:"flat",change:0,hasData:false},orderBook:{signal:"neutral",hasData:false},takerBuySell:{signal:"neutral",hasData:false},topTraders:{signal:"neutral",hasData:false},liquidation:{hasData:false}};
+      const conf=coin.conf||{direction:"NEUTRAL",bullScore:0,bearScore:0};
+      const patInfo=coin.pat?PAT.find(p=>p.id===coin.pat.id):null;
+      const safeVal=(v,fallback)=>v!=null?v:fallback;
+      const streams=[
+        {n:"Pattern",w:"1.5\u00D7",ic:IcCandle,active:!!patInfo,signal:patInfo?(patInfo.t==="bullish"?"bullish":patInfo.t==="bearish"?"bearish":"neutral"):"none",detail:patInfo?patInfo.n:"No pattern"},
+        {n:"Taker Flow",w:"1.3\u00D7",ic:IcTaker,active:sig.takerBuySell.hasData&&sig.takerBuySell.signal!=="neutral",signal:sig.takerBuySell.hasData?sig.takerBuySell.signal:"none",detail:sig.takerBuySell.hasData?safeVal(sig.takerBuySell.buyPct,0).toFixed(0)+"% buy / "+safeVal(sig.takerBuySell.sellPct,0).toFixed(0)+"% sell":"No data"},
+        {n:"Top Traders",w:"1.2\u00D7",ic:IcTop,active:sig.topTraders.hasData&&sig.topTraders.signal!=="neutral",signal:sig.topTraders.hasData?sig.topTraders.signal:"none",detail:sig.topTraders.hasData?safeVal(sig.topTraders.longPct,50).toFixed(0)+"% long":"No data"},
+        {n:"Funding",w:"1.2\u00D7",ic:IcFunding,active:sig.funding.hasData&&sig.funding.signal!=="neutral",signal:sig.funding.hasData?sig.funding.signal:"none",detail:sig.funding.hasData?(sig.funding.ratePct||((sig.funding.rate||0)*100).toFixed(4))+"%":"No data"},
+        {n:"Long/Short",w:"1.0\u00D7",ic:IcScale,active:sig.longShort.hasData&&sig.longShort.signal!=="neutral",signal:sig.longShort.hasData?sig.longShort.signal:"none",detail:sig.longShort.hasData?safeVal(sig.longShort.longPct,50).toFixed(0)+"% L":"No data"},
+        {n:"Open Interest",w:"0.8\u00D7",ic:IcOI,active:sig.oi.hasData&&sig.oi.signal!=="flat",signal:sig.oi.hasData?(sig.oi.signal==="rising"?"bullish":sig.oi.signal==="falling"?"bearish":"neutral"):"none",detail:sig.oi.hasData?(sig.oi.change>0?"+":"")+sig.oi.change.toFixed(1)+"%":"No data"},
+        {n:"Order Book",w:"1.0\u00D7",ic:IcBook,active:sig.orderBook.hasData&&sig.orderBook.signal!=="neutral",signal:sig.orderBook.hasData?sig.orderBook.signal:"none",detail:sig.orderBook.hasData?safeVal(sig.orderBook.bidPct,50).toFixed(0)+"% bids":"No data"},
+        {n:"Fear & Greed",w:"0.7\u00D7",ic:IcGauge,active:fng.value<30||fng.value>70,signal:fng.value<30?"bullish":fng.value>70?"bearish":"neutral",detail:fng.value+" \u2014 "+fng.label},
+      ];
+      const aligned=streams.filter(s=>s.active).length;const confLevel=aligned>=6?"Very Strong":aligned>=4?"Strong":aligned>=3?"Moderate":"Weak";
+      return <div style={{padding:"10px 14px"}}>
+        <div style={{display:"flex",gap:4,overflowX:"auto",marginBottom:12,scrollbarWidth:"none"}}>{coins.slice(0,8).map(c=><GBtn key={c.sh} t={t} active={sel===c.sh} onClick={()=>setSel(c.sh)}>{c.sh}</GBtn>)}</div>
+        <div style={{...glass(t,{borderRadius:18,padding:16,marginBottom:12,textAlign:"center"}),borderTop:conf.direction==="LONG"?"2px solid "+t.grn:conf.direction==="SHORT"?"2px solid "+t.red:"none"}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+          <div style={{fontSize:10,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase",marginBottom:4}}>Confluence Direction</div>
+          <div style={{fontSize:32,fontWeight:900,color:conf.direction==="LONG"?t.grn:conf.direction==="SHORT"?t.red:t.muted,letterSpacing:-1,textShadow:conf.direction!=="NEUTRAL"?"0 0 20px "+(conf.direction==="LONG"?t.grnG:t.redB):"none"}}>{conf.direction==="NEUTRAL"?"STAY OUT":conf.direction}</div>
+          <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:8}}>
+            <div><span style={{fontSize:9,color:t.dimmer}}>Bull</span><div style={{fontSize:16,fontWeight:800,color:t.grn}}>{conf.bullScore}%</div></div>
+            <div style={{width:1,background:t.gBorder}}/>
+            <div><span style={{fontSize:9,color:t.dimmer}}>Bear</span><div style={{fontSize:16,fontWeight:800,color:t.red}}>{conf.bearScore}%</div></div>
+            <div style={{width:1,background:t.gBorder}}/>
+            <div><span style={{fontSize:9,color:t.dimmer}}>Confidence</span><div style={{fontSize:12,fontWeight:800,color:t.gold}}>{confLevel}</div></div>
+          </div>
+          <div style={{fontSize:9,color:t.dimmer,marginTop:6}}>{aligned}/8 streams aligned</div>
+        </div></div>
+        <div style={{fontSize:10,fontWeight:800,color:t.gold,letterSpacing:.5,textTransform:"uppercase",marginBottom:8}}><IcTarget size={11} color={t.gold} sw={2} style={{verticalAlign:"-2px",marginRight:4}}/>Signal Streams</div>
+        {streams.map((s,i)=>{const sc=s.signal==="bullish"?t.grn:s.signal==="bearish"?t.red:t.dimmer;const SIc=s.ic;const noData=s.signal==="none";
+          return <div key={s.n} style={{...glass(t,{borderRadius:12,padding:"8px 10px",marginBottom:6}),borderLeft:s.active?"2px solid "+sc:noData?"2px solid "+t.gBorder:"2px solid transparent",opacity:noData?.55:1,animation:"slideUp .3s ease "+i*.05+"s both"}}><Refr t={t}/><div style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:10}}>
+            <SIc size={16} color={s.active?sc:t.dimmer} sw={1.8}/>
+            <div style={{flex:1}}><div style={{display:"flex",alignItems:"center",gap:6}}><span style={{fontSize:11,fontWeight:700,color:noData?t.dimmer:t.text}}>{s.n}</span><span style={{fontSize:8,color:t.dimmer,background:t.goldDim,padding:"1px 4px",borderRadius:4}}>{s.w}</span></div><span style={{fontSize:9,color:noData?t.dimmer:t.muted}}>{s.detail}</span></div>
+            {noData?<span style={{fontSize:8,color:t.dimmer,fontStyle:"italic"}}>offline</span>:s.signal==="bullish"?<IcUp size={14} color={t.grn} sw={2.5}/>:s.signal==="bearish"?<IcDown size={14} color={t.red} sw={2.5}/>:<span style={{color:t.dimmer,fontWeight:800}}>\u2014</span>}
+          </div></div>;})}
+      </div>;
+    }
+
+    /* ═══ PATTERNS TAB — unchanged ═══ */
+    function PatternsTab({coins,t}){
+      const[expand,setExpand]=useState(null);const[filter,setFilter]=useState("all");
+      const groups=[{id:"all",l:"All"},{id:1,l:"Single"},{id:2,l:"Double"},{id:3,l:"Triple"}];
+      const filtered=filter==="all"?PAT:PAT.filter(p=>p.c===filter);
+      const detected=coins.filter(c=>c.pat).map(c=>({coin:c.sh,pat:c.pat.id,dir:c.conf.direction}));
+      return <div style={{padding:"10px 14px"}}>
+        {detected.length>0&&<div style={{marginBottom:14}}><div style={{fontSize:10,fontWeight:800,color:t.gold,letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}><IcBolt size={11} color={t.gold} sw={2} style={{verticalAlign:"-2px",marginRight:3}}/>Live Detections</div><div style={{display:"flex",gap:6,overflowX:"auto",paddingBottom:6,scrollbarWidth:"none"}}>{detected.map(d=>{const p=PAT.find(x=>x.id===d.pat);return <div key={d.coin} style={{...glass(t,{borderRadius:12,padding:"8px 10px",flex:"0 0 auto",minWidth:120}),borderTop:"2px solid "+(d.dir==="LONG"?t.grn:d.dir==="SHORT"?t.red:t.gBorder)}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}><div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:3}}><span style={{fontSize:12,fontWeight:800,color:t.text}}>{d.coin}</span><DBadge dir={d.dir} sm t={t}/></div><span style={{fontSize:10,color:p&&p.t==="bullish"?t.grn:p&&p.t==="bearish"?t.red:t.gold,fontWeight:700}}>{p?p.n:""}</span></div></div>;})}</div></div>}
+        <div style={{display:"flex",gap:4,marginBottom:10}}>{groups.map(g=><GBtn key={g.id} t={t} active={filter===g.id} onClick={()=>setFilter(g.id)}>{g.l}</GBtn>)}</div>
+        {filtered.map((p,i)=>{const isO=expand===p.id;const cls={bullish:{c:t.grn,bg:t.grnDim,b:t.grnB},bearish:{c:t.red,bg:t.redDim,b:t.redB},neutral:{c:t.gold,bg:t.goldDim,b:t.goldBtnBorder},dynamic:{c:t.gold,bg:t.goldDim,b:t.goldBtnBorder}};const s=cls[p.t]||cls.neutral;
+          return <div key={p.id} onClick={()=>setExpand(isO?null:p.id)} style={{...glass(t,{borderRadius:14,padding:"10px 12px",marginBottom:6,cursor:"pointer"}),borderLeft:isO?"2px solid "+s.c:"2px solid transparent",animation:"slideUp .2s ease "+i*.03+"s both"}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}><div style={{display:"flex",alignItems:"center",gap:8}}><IcCandle size={18} color={s.c} sw={1.5}/><div><div style={{fontSize:12,fontWeight:700,color:t.text}}>{p.n}</div><div style={{display:"flex",gap:6,marginTop:2}}><span style={{fontSize:8,fontWeight:700,color:s.c,background:s.bg,padding:"1px 5px",borderRadius:4,textTransform:"capitalize"}}>{p.t}</span><span style={{fontSize:8,fontWeight:600,color:t.dimmer}}>{p.c} candle{p.c>1?"s":""}</span></div></div></div><div style={{textAlign:"right"}}><div style={{fontSize:14,fontWeight:900,color:p.wr>=65?t.grn:p.wr>=55?t.gold:t.muted}}>{p.wr}%</div><div style={{fontSize:8,color:t.dimmer}}>win rate</div></div></div>
+            {isO&&<div style={{marginTop:8,paddingTop:8,borderTop:"1px solid "+t.gBorder}}><p style={{fontSize:11,color:t.muted,lineHeight:1.5}}>{p.d}</p>{detected.filter(d=>d.pat===p.id).length>0&&<div style={{marginTop:6,fontSize:9,color:t.gold,fontWeight:700}}>Detected on: {detected.filter(d=>d.pat===p.id).map(d=>d.coin).join(", ")}</div>}</div>}
+          </div></div>;})}
+      </div>;
+    }
+
+    /* ═══ HEATMAP TAB — Market Overview Grid ═══ */
+    function HeatmapTab({coins,fng,t}){
+      const[mode,setMode]=useState("change");/* change | signal | volume */
+      const[sel,setSel]=useState(()=>{/* default: BTC + top mover */return "BTC";});
+      const fmt=p=>p<1?p.toFixed(4):p<100?p.toFixed(2):p.toLocaleString(undefined,{maximumFractionDigits:0});
+      const fmtVol=v=>v>=1e9?(v/1e9).toFixed(1)+"B":v>=1e6?(v/1e6).toFixed(1)+"M":v>=1e3?(v/1e3).toFixed(1)+"K":v.toFixed(0);
+
+      /* Color mapping */
+      const getColor=(coin)=>{
+        if(mode==="change"){
+          const ch=coin.change||0;
+          if(ch>4)return{bg:"rgba(92,201,138,0.35)",border:"rgba(92,201,138,0.5)",text:t.grn};
+          if(ch>2)return{bg:"rgba(92,201,138,0.2)",border:"rgba(92,201,138,0.3)",text:t.grn};
+          if(ch>0)return{bg:"rgba(92,201,138,0.1)",border:"rgba(92,201,138,0.15)",text:t.grn};
+          if(ch>-2)return{bg:"rgba(224,96,96,0.1)",border:"rgba(224,96,96,0.15)",text:t.red};
+          if(ch>-4)return{bg:"rgba(224,96,96,0.2)",border:"rgba(224,96,96,0.3)",text:t.red};
+          return{bg:"rgba(224,96,96,0.35)",border:"rgba(224,96,96,0.5)",text:t.red};
+        }
+        if(mode==="signal"){
+          const dir=coin.conf?coin.conf.direction:"NEUTRAL";
+          if(dir==="LONG")return{bg:"rgba(92,201,138,0.2)",border:"rgba(92,201,138,0.3)",text:t.grn};
+          if(dir==="SHORT")return{bg:"rgba(224,96,96,0.2)",border:"rgba(224,96,96,0.3)",text:t.red};
+          return{bg:"rgba(255,255,255,0.04)",border:t.gBorder,text:t.dimmer};
+        }
+        /* volume mode */
+        const sig=coin.sig||{};const tk=sig.takerBuySell||{hasData:false};
+        if(!tk.hasData)return{bg:"rgba(255,255,255,0.04)",border:t.gBorder,text:t.dimmer};
+        if(tk.buyPct>55)return{bg:"rgba(92,201,138,0.2)",border:"rgba(92,201,138,0.3)",text:t.grn};
+        if(tk.sellPct>55)return{bg:"rgba(224,96,96,0.2)",border:"rgba(224,96,96,0.3)",text:t.red};
+        return{bg:"rgba(255,255,255,0.04)",border:t.gBorder,text:t.muted};
+      };
+
+      const getValue=(coin)=>{
+        if(mode==="change")return(coin.change>=0?"+":"")+coin.change.toFixed(2)+"%";
+        if(mode==="signal")return coin.conf?coin.conf.direction:"—";
+        const tk=coin.sig&&coin.sig.takerBuySell;
+        return tk&&tk.hasData?tk.buyPct.toFixed(0)+"% B":"—";
+      };
+
+      /* Sort: biggest movers first for change mode, strongest signals for signal mode */
+      const sorted=mode==="change"?[...coins].sort((a,b)=>Math.abs(b.change)-Math.abs(a.change)):mode==="signal"?[...coins].sort((a,b)=>(b.conf?b.conf.strength:0)-(a.conf?a.conf.strength:0)):[...coins].sort((a,b)=>{const av=a.sig&&a.sig.takerBuySell&&a.sig.takerBuySell.hasData?a.sig.takerBuySell.buyVol+a.sig.takerBuySell.sellVol:0;const bv=b.sig&&b.sig.takerBuySell&&b.sig.takerBuySell.hasData?b.sig.takerBuySell.buyVol+b.sig.takerBuySell.sellVol:0;return bv-av;});
+
+      /* BTC + top 3 for featured row */
+      const btc=coins.find(c=>c.sh==="BTC");
+      const topMovers=sorted.filter(c=>c.sh!=="BTC").slice(0,3);
+
+      /* Market summary stats */
+      const bullCount=coins.filter(c=>c.conf&&c.conf.direction==="LONG").length;
+      const bearCount=coins.filter(c=>c.conf&&c.conf.direction==="SHORT").length;
+      const neutCount=coins.length-bullCount-bearCount;
+      const avgChange=coins.length>0?coins.reduce((s,c)=>s+c.change,0)/coins.length:0;
+
+      const selCoin=sel?coins.find(c=>c.sh===sel):null;
+
+      return <div style={{padding:"10px 14px"}}>
+        {/* Market Summary */}
+        <div style={{...glass(t,{borderRadius:14,padding:"10px 12px",marginBottom:10}),borderTop:"2px solid "+t.gold}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center"}}>
+            <div><div style={{fontSize:9,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase"}}><IcGrid size={10} color={t.gold} sw={2} style={{verticalAlign:"-1px",marginRight:3}}/>Market Pulse</div>
+              <div style={{fontSize:20,fontWeight:900,color:avgChange>=0?t.grn:t.red,marginTop:2}}>{avgChange>=0?"+":""}{avgChange.toFixed(2)}%</div>
+              <div style={{fontSize:8,color:t.dimmer,marginTop:1}}>avg across {coins.length} pairs</div>
+            </div>
+            <div style={{display:"flex",gap:12,alignItems:"center"}}>
+              <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:t.grn}}>{bullCount}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>LONG</div></div>
+              <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:t.dimmer}}>{neutCount}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>NEUTRAL</div></div>
+              <div style={{textAlign:"center"}}><div style={{fontSize:16,fontWeight:900,color:t.red}}>{bearCount}</div><div style={{fontSize:7,color:t.dimmer,fontWeight:700}}>SHORT</div></div>
+            </div>
+          </div>
+          {/* Sentiment bar */}
+          <div style={{display:"flex",height:4,borderRadius:2,overflow:"hidden",marginTop:8,gap:1,boxShadow:t.neuInset}}>
+            <div style={{width:(bullCount/coins.length*100)+"%",background:t.grn,borderRadius:"2px 0 0 2px",transition:"width .5s"}}/>
+            <div style={{width:(neutCount/coins.length*100)+"%",background:t.gBorder}}/>
+            <div style={{width:(bearCount/coins.length*100)+"%",background:t.red,borderRadius:"0 2px 2px 0",transition:"width .5s"}}/>
+          </div>
+        </div></div>
+
+        {/* Mode toggle */}
+        <div style={{display:"flex",gap:4,marginBottom:10}}>{[{id:"change",l:"% Change"},{id:"signal",l:"Signals"},{id:"volume",l:"Taker Flow"}].map(m=><GBtn key={m.id} t={t} active={mode===m.id} onClick={()=>setMode(m.id)}>{m.l}</GBtn>)}</div>
+
+        {/* Heatmap Grid — 3 columns */}
+        <div style={{display:"grid",gridTemplateColumns:"1fr 1fr 1fr",gap:6,marginBottom:10}}>
+          {sorted.map((c,i)=>{
+            const clr=getColor(c);const val=getValue(c);const isActive=sel===c.sh;
+            return <div key={c.sh} onClick={()=>setSel(c.sh)} style={{
+              background:clr.bg,border:"1px solid "+clr.border,borderRadius:12,padding:"10px 8px 8px",
+              cursor:"pointer",position:"relative",overflow:"hidden",transition:"all .2s",
+              boxShadow:isActive?"0 0 12px "+clr.border+","+t.neuOut:t.neuOut,
+              transform:isActive?"scale(1.03)":"scale(1)",
+              animation:"fadeIn .3s ease "+i*.03+"s both"
+            }}>
+              {/* Glass highlight */}
+              <div style={{position:"absolute",inset:0,borderRadius:"inherit",pointerEvents:"none",zIndex:1,background:t.gHi,borderTop:"1px solid "+t.gHiEdge}}/>
+              <div style={{position:"relative",zIndex:2}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}>
+                  <span style={{fontSize:13,fontWeight:900,color:t.text}}>{c.sh}</span>
+                  {c.conf&&c.conf.direction!=="NEUTRAL"&&<DBadge dir={c.conf.direction} sm t={t}/>}
+                </div>
+                <CStrip candles={c.candles} width={120} height={28} t={t}/>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginTop:4}}>
+                  <span style={{fontSize:9,fontWeight:600,color:t.muted}}>${fmt(c.price)}</span>
+                  <span style={{fontSize:11,fontWeight:900,color:clr.text}}>{val}</span>
+                </div>
+                {c.pat&&<div style={{marginTop:3}}><PPill pat={c.pat} t={t}/></div>}
+              </div>
+            </div>;
+          })}
+        </div>
+
+        {/* Selected coin detail panel — always visible */}
+        {selCoin&&<div style={{...glass(t,{borderRadius:14,padding:"12px",marginBottom:10}),borderLeft:"3px solid "+(selCoin.conf&&selCoin.conf.direction==="LONG"?t.grn:selCoin.conf&&selCoin.conf.direction==="SHORT"?t.red:t.gold)}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+          <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:8}}>
+            <div style={{display:"flex",alignItems:"center",gap:6}}>
+              <span style={{fontSize:16,fontWeight:900,color:t.text}}>{selCoin.sh}</span>
+              <span style={{fontSize:11,color:t.muted}}>${fmt(selCoin.price)}</span>
+              <span style={{fontSize:11,fontWeight:800,color:selCoin.change>=0?t.grn:t.red}}>{selCoin.change>=0?"+":""}{selCoin.change.toFixed(2)}%</span>
+            </div>
+            <DBadge dir={selCoin.conf?selCoin.conf.direction:"NEUTRAL"} t={t}/>
+          </div>
+          {/* Quick signal summary */}
+          <div style={{display:"grid",gridTemplateColumns:"1fr 1fr",gap:6}}>
+            {[
+              {l:"Funding",v:selCoin.sig&&selCoin.sig.funding&&selCoin.sig.funding.hasData?selCoin.sig.funding.ratePct+"%":"—",c:selCoin.sig&&selCoin.sig.funding?selCoin.sig.funding.signal==="bullish"?t.grn:selCoin.sig.funding.signal==="bearish"?t.red:t.muted:t.dimmer},
+              {l:"L/S Ratio",v:selCoin.sig&&selCoin.sig.longShort&&selCoin.sig.longShort.hasData?selCoin.sig.longShort.longPct.toFixed(0)+"/"+selCoin.sig.longShort.shortPct.toFixed(0):"—",c:selCoin.sig&&selCoin.sig.longShort?selCoin.sig.longShort.signal==="bullish"?t.grn:selCoin.sig.longShort.signal==="bearish"?t.red:t.muted:t.dimmer},
+              {l:"Taker",v:selCoin.sig&&selCoin.sig.takerBuySell&&selCoin.sig.takerBuySell.hasData?selCoin.sig.takerBuySell.buyPct.toFixed(0)+"% buy":"—",c:selCoin.sig&&selCoin.sig.takerBuySell?selCoin.sig.takerBuySell.signal==="bullish"?t.grn:selCoin.sig.takerBuySell.signal==="bearish"?t.red:t.muted:t.dimmer},
+              {l:"Order Book",v:selCoin.sig&&selCoin.sig.orderBook&&selCoin.sig.orderBook.hasData?selCoin.sig.orderBook.bidPct.toFixed(0)+"% bids":"—",c:selCoin.sig&&selCoin.sig.orderBook?selCoin.sig.orderBook.signal==="bullish"?t.grn:selCoin.sig.orderBook.signal==="bearish"?t.red:t.muted:t.dimmer},
+            ].map(it=><div key={it.l} style={{background:"rgba(255,255,255,0.02)",borderRadius:8,padding:"5px 8px",border:"1px solid "+t.gBorder}}>
+              <div style={{fontSize:7,fontWeight:700,color:t.dimmer,textTransform:"uppercase",letterSpacing:.5}}>{it.l}</div>
+              <div style={{fontSize:12,fontWeight:800,color:it.c,marginTop:1}}>{it.v}</div>
+            </div>)}
+          </div>
+          {selCoin.conf&&<div style={{display:"flex",justifyContent:"center",gap:16,marginTop:8,paddingTop:8,borderTop:"1px solid "+t.gBorder}}>
+            <div><span style={{fontSize:8,color:t.dimmer}}>Bull Score</span><div style={{fontSize:14,fontWeight:900,color:t.grn}}>{selCoin.conf.bullScore}%</div></div>
+            <div><span style={{fontSize:8,color:t.dimmer}}>Bear Score</span><div style={{fontSize:14,fontWeight:900,color:t.red}}>{selCoin.conf.bearScore}%</div></div>
+            <div><span style={{fontSize:8,color:t.dimmer}}>Strength</span><div style={{fontSize:14,fontWeight:900,color:t.gold}}>{selCoin.conf.strength}%</div></div>
+          </div>}
+        </div></div>}
+
+        {/* Market mood footer */}
+        <div style={{...glass(t,{borderRadius:10,padding:"8px 10px",textAlign:"center"})}}>
+          <Refr t={t}/>
+          <div style={{position:"relative",zIndex:2,fontSize:9,color:t.muted}}>
+            {bullCount>bearCount+3?"Market is strongly bullish — "+bullCount+"/"+coins.length+" pairs showing LONG signals":
+             bearCount>bullCount+3?"Market is strongly bearish — "+bearCount+"/"+coins.length+" pairs showing SHORT signals":
+             bullCount>bearCount?"Slightly bullish bias — mixed signals across market":
+             bearCount>bullCount?"Slightly bearish bias — caution advised":
+             "Market is neutral — no clear directional bias"}
+            {fng&&<span style={{color:t.gold}}> \u2022 F&G: {fng.value}</span>}
+          </div>
+        </div>
+
+        <div style={{padding:8,textAlign:"center"}}><p style={{fontSize:8,color:t.dimmer}}>Tap any coin to switch details</p></div>
+      </div>;
+    }
+
+    /* ═══ ARENA TAB — prediction game ═══ */
+    function ArenaTab({coins,t}){
+      const[sp,setSp]=useState(()=>{try{return parseInt(localStorage.getItem("ccp-sp"))||10000}catch{return 10000}});
+      const[sel,setSel]=useState("BTC");const[bet,setBet]=useState(null);
+      const[history,setHistory]=useState(()=>{try{return JSON.parse(localStorage.getItem("ccp-arena-h"))||[]}catch{return[]}});
+      const[cd,setCd]=useState(0);const[ep,setEp]=useState(0);const[streak,setStreak]=useState(0);
+      const fmt=p=>p<1?p.toFixed(4):p<100?p.toFixed(2):p.toLocaleString(undefined,{maximumFractionDigits:0});
+      useEffect(()=>{try{localStorage.setItem("ccp-sp",sp);localStorage.setItem("ccp-arena-h",JSON.stringify(history.slice(0,20)))}catch{}},[sp,history]);
+      useEffect(()=>{if(!bet||cd<=0)return;const ti=setInterval(()=>setCd(c=>{if(c<=1){clearInterval(ti);const coin=coins.find(x=>x.sh===sel);if(coin){const cur=coin.price;const diff=((cur-ep)/ep)*100;const won=(bet==="LONG"&&diff>0)||(bet==="SHORT"&&diff<0);const pts=won?Math.round(500*(1+streak*.1)):0;setSp(p=>p+(won?pts:-250));setStreak(s=>won?s+1:0);setHistory(h=>[{coin:sel,dir:bet,won,pts:won?pts:-250,time:Date.now()},...h]);}setBet(null);return 0;}return c-1;}),1000);return()=>clearInterval(ti);},[bet,cd]);
+      const place=(dir)=>{if(bet||sp<250)return;const coin=coins.find(x=>x.sh===sel);if(!coin)return;setBet(dir);setEp(coin.price);setCd(60);};
+      const wr=history.length>0?Math.round(history.filter(h=>h.won).length/history.length*100):0;
+      return <div style={{padding:"10px 14px"}}>
+        <div style={{...glass(t,{borderRadius:16,padding:14,marginBottom:12,textAlign:"center"}),borderTop:"2px solid "+t.gold}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+          <div style={{fontSize:9,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase"}}><IcSword size={11} color={t.gold} sw={2} style={{verticalAlign:"-2px",marginRight:3}}/>Signal Points</div>
+          <div style={{fontSize:28,fontWeight:900,color:t.gold,marginTop:2,textShadow:"0 0 20px "+t.goldGlow}}>{sp.toLocaleString()} SP</div>
+          <div style={{display:"flex",justifyContent:"center",gap:16,marginTop:6}}><span style={{fontSize:9,color:t.muted}}>Streak: <b style={{color:streak>0?t.grn:t.dimmer}}>{streak}</b></span><span style={{fontSize:9,color:t.muted}}>Win: <b style={{color:wr>=50?t.grn:t.red}}>{wr}%</b></span><span style={{fontSize:9,color:t.muted}}>Bets: <b style={{color:t.text}}>{history.length}</b></span></div>
+        </div></div>
+        <div style={{display:"flex",gap:4,overflowX:"auto",marginBottom:10,scrollbarWidth:"none"}}>{coins.slice(0,8).map(c=><GBtn key={c.sh} t={t} active={sel===c.sh} onClick={()=>!bet&&setSel(c.sh)} style={{opacity:bet&&sel!==c.sh?.4:1}}>{c.sh}</GBtn>)}</div>
+        {bet?<div style={{...glass(t,{borderRadius:14,padding:16,textAlign:"center",marginBottom:12}),borderTop:"2px solid "+(bet==="LONG"?t.grn:t.red)}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+          <div style={{fontSize:10,fontWeight:700,color:t.dimmer,letterSpacing:1,textTransform:"uppercase"}}>Active Prediction</div>
+          <div style={{fontSize:20,fontWeight:900,color:bet==="LONG"?t.grn:t.red,marginTop:4}}>{sel} {bet}</div>
+          <div style={{fontSize:10,color:t.muted,marginTop:4}}>Entry: ${fmt(ep)}</div>
+          <div style={{position:"relative",width:80,height:80,margin:"10px auto"}}><svg width={80} height={80} viewBox="0 0 80 80"><circle cx={40} cy={40} r={34} fill="none" stroke={t.gBorder} strokeWidth={5}/><circle cx={40} cy={40} r={34} fill="none" stroke={bet==="LONG"?t.grn:t.red} strokeWidth={5} strokeDasharray={(cd/60)*213.6+" 999"} strokeLinecap="round" transform="rotate(-90 40 40)" style={{transition:"stroke-dasharray 1s linear",filter:"drop-shadow(0 0 6px "+(bet==="LONG"?t.grnG:t.redB)+")"}}/></svg><div style={{position:"absolute",inset:0,display:"flex",alignItems:"center",justifyContent:"center"}}><span style={{fontSize:22,fontWeight:900,color:t.text}}>{cd}</span></div></div>
+          <div style={{fontSize:9,color:t.dimmer}}>Resolving in {cd}s</div>
+        </div></div>
+        :<div style={{display:"flex",gap:8,marginBottom:12}}>
+          <button onClick={()=>place("LONG")} disabled={sp<250} style={{flex:1,padding:14,borderRadius:12,border:"1px solid "+t.grnB,background:t.grnDim,color:t.grn,fontSize:14,fontWeight:900,cursor:sp<250?"not-allowed":"pointer",fontFamily:FN,opacity:sp<250?.4:1,boxShadow:t.neuBtn,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"48%",borderRadius:"inherit",background:t.btnHi,pointerEvents:"none"}}/><span style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><IcUp size={16} color={t.grn} sw={2.5}/> LONG</span></button>
+          <button onClick={()=>place("SHORT")} disabled={sp<250} style={{flex:1,padding:14,borderRadius:12,border:"1px solid "+t.redB,background:t.redDim,color:t.red,fontSize:14,fontWeight:900,cursor:sp<250?"not-allowed":"pointer",fontFamily:FN,opacity:sp<250?.4:1,boxShadow:t.neuBtn,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"48%",borderRadius:"inherit",background:t.btnHi,pointerEvents:"none"}}/><span style={{position:"relative",zIndex:1,display:"flex",alignItems:"center",justifyContent:"center",gap:4}}><IcDown size={16} color={t.red} sw={2.5}/> SHORT</span></button>
+        </div>}
+        <div style={{fontSize:9,color:t.dimmer,textAlign:"center",marginBottom:12}}>Cost: 250 SP {"\u2022"} Win: 500+ SP (streak bonus) {"\u2022"} 60s resolution</div>
+        {history.length>0&&<div><div style={{fontSize:10,fontWeight:800,color:t.gold,letterSpacing:.5,textTransform:"uppercase",marginBottom:6}}>History</div>{history.slice(0,10).map((h,i)=><div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"7px 10px",...glass(t,{borderRadius:10,marginBottom:4}),fontSize:10}}><Refr t={t}/><div style={{position:"relative",zIndex:2,display:"flex",alignItems:"center",gap:6}}><span style={{fontWeight:800,color:t.text}}>{h.coin}</span>{h.dir==="LONG"?<IcUp size={10} color={t.grn} sw={2.5}/>:<IcDown size={10} color={t.red} sw={2.5}/>}</div><span style={{position:"relative",zIndex:2,color:h.won?t.grn:t.red,fontWeight:800}}>{h.won?"\u2713":"\u2717"} {h.pts>0?"+":""}{h.pts} SP</span></div>)}</div>}
+      </div>;
+    }
+
+    /* ═══ MAIN APP — FIXED stream count display ═══ */
+    function App(){
+      const[tab,setTab]=useState("scanner");const[exch,setExch]=useState("Binance");const[tf,setTf]=useState("1h");
+      const[coins,setCoins]=useState([]);const[loading,setLoading]=useState(true);const[sec,setSec]=useState(0);
+      const[tier,setTier]=useState("plus");const[fng,setFng]=useState({value:50,label:"Neutral",src:"..."});const[src,setSrc]=useState("...");
+      const[dark,setDark]=useState(()=>{try{return localStorage.getItem("ccp-theme")!=="light"}catch{return true}});
+      const t=dark?TH.dark:TH.light;
+      useEffect(()=>{document.body.style.background=dark?"#16171c":"#efede9";const mc=document.querySelector('meta[name="theme-color"]');if(mc)mc.content=t.metaCol;try{localStorage.setItem("ccp-theme",dark?"dark":"light")}catch{}},[dark]);
+
+      const fmt=p=>p<1?p.toFixed(4):p<100?p.toFixed(2):p.toLocaleString(undefined,{maximumFractionDigits:0});
+      const fetchAll=useCallback(async()=>{
+        setLoading(true);
+        const fD=await fetchFnG();
+        setFng(fD);
+        const res=await Promise.all(COINS.map(async c=>{
+          const candles=await fetchK(c.sh,exch,tf);
+          const sig=await fetchSig(c.sh);
+          if(sig.fearGreed&&sig.fearGreed.value!=null){fD.value=parseInt(sig.fearGreed.value);fD.label=sig.fearGreed.label||fD.label;}
+          const last=candles[candles.length-1],prev=candles[candles.length-2];
+          const price=last?last.close:0,change=prev&&prev.close?((last.close-prev.close)/prev.close)*100:0;
+          const patR=detect(candles);
+          const pat=patR?Object.assign({},patR,PAT.find(p=>p.id===patR.id)):null;
+          const conf=confCalc(patR,sig,fD);
+          return Object.assign({},c,{candles,price,change,pat,sig,conf,extreme:Math.abs(change)>4.2});
+        }));
+        setFng({...fD});
+        setCoins(res);
+        setLoading(false);
+        setSec(0);
+        /* FIXED: use activeStreamCount (number) not activeStreams (array) */
+        const firstSig=res[0]&&res[0].sig;
+        if(firstSig&&firstSig.activeStreamCount>0){
+          setSrc(firstSig.activeStreamCount+"/"+firstSig.totalPossibleStreams);
+        }else{
+          setSrc(res[0]&&res[0].candles&&res[0].candles.length===10?"LIVE":"SIM");
+        }
+        const el=document.getElementById("loading");if(el)el.style.display="none";
+      },[exch,tf]);
+      useEffect(()=>{fetchAll()},[fetchAll]);
+      useEffect(()=>{const i=setInterval(fetchAll,25000);return()=>clearInterval(i)},[fetchAll]);
+      useEffect(()=>{const i=setInterval(()=>setSec(s=>s+1),1000);return()=>clearInterval(i)},[]);
+
+      const sorted=[...coins].sort((a,b)=>(b.pat?b.pat.sc:0)-(a.pat?a.pat.sc:0));
+      const hot=sorted.filter(c=>c.pat).slice(0,4);
+      const aff={Binance:"https://www.binance.com/en/futures/",Bybit:"https://www.bybit.com/trade/usdt/",OKX:"https://www.okx.com/trade-futures/"};
+      const tabDef=[{id:"scanner",l:"Scanner",ic:IcRadar},{id:"signals",l:"Signals",ic:IcSignal},{id:"when",l:"When",ic:IcTarget},{id:"patterns",l:"Patterns",ic:IcCandle},{id:"heatmap",l:"Heatmap",ic:IcGrid},{id:"arena",l:"Arena",ic:IcSword}];
+
+      return <div style={{width:"100%",maxWidth:520,margin:"0 auto",height:"calc(var(--vh, 1vh) * 100)",display:"flex",flexDirection:"column",background:t.bg,color:t.text,fontFamily:FN,overflow:"hidden",transition:"background .5s",position:"relative"}}>
+        {/* Ambient glow orbs */}
+        <div style={{position:"fixed",top:-80,right:-40,width:280,height:280,borderRadius:"50%",background:"radial-gradient(circle,"+t.glow1+" 0%,transparent 70%)",filter:"blur(60px)",pointerEvents:"none"}}/>
+        <div style={{position:"fixed",bottom:40,left:-80,width:240,height:240,borderRadius:"50%",background:"radial-gradient(circle,"+t.glow2+" 0%,transparent 70%)",filter:"blur(50px)",pointerEvents:"none"}}/>
+        {/* Dot grid */}
+        <div style={{position:"fixed",inset:0,pointerEvents:"none",backgroundImage:"radial-gradient(circle,"+t.gridDot+" 1px,transparent 1px)",backgroundSize:"24px 24px"}}/>
+
+        {/* TOP BAR */}
+        <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"10px 14px 8px",borderBottom:"1px solid "+t.gBorder,flexShrink:0,position:"relative",zIndex:10}}>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <div style={{width:28,height:28,borderRadius:9,background:t.goldBtnBg,border:"1px solid "+t.goldBtnBorder,boxShadow:t.neuBtn+",inset 0 0 8px "+t.goldDim,display:"flex",alignItems:"center",justifyContent:"center",position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:t.btnHi,pointerEvents:"none"}}/><IcBolt size={13} color={t.gold} sw={2.2} style={{position:"relative",zIndex:1}}/></div>
+            <span style={{fontSize:13,fontWeight:800,letterSpacing:-.5,color:t.text}}>CONSOLE</span>
+            <span style={{fontSize:8,fontWeight:800,color:t.gold,background:t.goldDim,padding:"1px 5px",borderRadius:4,border:"1px solid "+t.goldBtnBorder}}>PRO</span>
+            <span style={{fontSize:7,fontWeight:700,color:src!=="SIM"&&src!=="..."?t.grn:t.dimmer,background:src!=="SIM"&&src!=="..."?t.grnDim:"transparent",padding:"1px 5px",borderRadius:99,border:"1px solid "+(src!=="SIM"&&src!=="..."?t.grnB:t.gBorder)}}>{"\u25CF"} {src}</span>
+          </div>
+          <div style={{display:"flex",alignItems:"center",gap:6}}>
+            <TToggle dark={dark} onToggle={()=>setDark(d=>!d)} t={t}/>
+            <div style={{display:"flex",alignItems:"center",gap:4}}><div style={{width:5,height:5,borderRadius:"50%",background:t.grn,animation:"pulse 2s infinite",boxShadow:"0 0 6px "+t.grnG}}/><span style={{fontSize:9,color:t.dimmer}}>{sec<2?"Now":sec+"s"}</span></div>
+          </div>
+        </div>
+
+        {tab==="scanner"&&<div style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 14px 4px",gap:6,flexWrap:"wrap",flexShrink:0,position:"relative",zIndex:10}}>
+          <div style={{display:"flex",gap:4}}>{["Binance","Bybit","OKX"].map(o=><GBtn key={o} t={t} active={exch===o} onClick={()=>setExch(o)}>{o}</GBtn>)}</div>
+          <div style={{display:"flex",gap:4}}>{["15m","30m","1h","4h"].map(o=><GBtn key={o} t={t} active={tf===o} onClick={()=>setTf(o)}>{o}</GBtn>)}</div>
+        </div>}
+
+        {/* DATA STRIP — market overview */}
+        {tab==="scanner"&&coins.length>0&&<DataStrip coins={coins} t={t}/>}
+
+        {/* CONTENT */}
+        <div style={{flex:1,overflow:"auto",minHeight:0,position:"relative",zIndex:5}}>
+          {coins.length===0&&loading?<div style={{display:"flex",alignItems:"center",justifyContent:"center",height:"100%",flexDirection:"column",gap:10}}><IcRadar size={32} color={t.gold} sw={1.5} style={{animation:"pulse 1s infinite"}}/><span style={{fontSize:12,color:t.gold,fontWeight:700}}>Connecting to {exch}...</span></div>
+          :tab==="scanner"?<div>
+            {loading&&<div style={{textAlign:"center",padding:"6px 0"}}><span style={{fontSize:10,color:t.gold,animation:"pulse 1s infinite"}}>Updating...</span></div>}
+            <div style={{padding:"8px 14px 4px"}}><FnGGauge value={fng.value} label={fng.label} src={fng.src} t={t}/></div>
+            <MarketPulse coins={coins} t={t}/>
+            <div style={{padding:"10px 0 4px"}}><div style={{padding:"0 14px 6px"}}><span style={{fontSize:10,fontWeight:800,color:t.gold,letterSpacing:.5,textTransform:"uppercase"}}><IcBolt size={10} color={t.gold} sw={2.2} style={{verticalAlign:"-1px",marginRight:3}}/>Hot Right Now</span></div>
+              <div style={{display:"flex",gap:8,overflowX:"auto",padding:"0 14px 10px",scrollbarWidth:"none"}}>{hot.map(c=><div key={c.sh} style={{...glass(t,{borderRadius:14,padding:"10px 10px 8px",flex:"0 0 auto",width:156}),borderTop:"2px solid "+(c.conf.direction==="LONG"?t.grn:c.conf.direction==="SHORT"?t.red:t.gBorder)}}><Refr t={t}/><div style={{position:"relative",zIndex:2}}>
+                <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:4}}><span style={{fontSize:13,fontWeight:800,color:t.text}}>{c.sh}</span><DBadge dir={c.conf.direction} sm t={t}/></div>
+                <CStrip candles={c.candles} width={136} height={40} t={t}/>
+                <div style={{display:"flex",justifyContent:"space-between",marginTop:5}}><span style={{fontSize:11,fontWeight:600,color:t.muted}}>${fmt(c.price)}</span><span style={{fontSize:10,fontWeight:700,color:c.change>=0?t.grn:t.red}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</span></div>
+                <div style={{marginTop:4}}><PPill pat={c.pat} t={t}/></div>
+              </div></div>)}</div></div>
+            <div style={{display:"grid",gridTemplateColumns:"1fr 100px 1fr auto",padding:"5px 14px",gap:8,borderBottom:"1px solid "+t.gBorder}}>{["PAIR","CANDLES","SIGNAL","TRADE"].map(h=><span key={h} style={{fontSize:8,fontWeight:700,color:t.dimmer,letterSpacing:1.2}}>{h}</span>)}</div>
+            {sorted.map((c,i)=><div key={c.sh} style={{display:"grid",gridTemplateColumns:"1fr 100px 1fr auto",alignItems:"center",padding:"9px 14px",borderBottom:"1px solid "+t.gBorder+"33",gap:8,animation:"fadeIn .3s ease "+i*.03+"s both"}}>
+              <div><div style={{display:"flex",alignItems:"center",gap:4}}><span style={{fontSize:12,fontWeight:800,color:t.text}}>{c.sh}</span>{c.extreme&&<IcBolt size={10} color={t.gold} sw={2.5}/>}</div><div style={{display:"flex",gap:5,marginTop:1}}><span style={{fontSize:10,color:t.muted}}>${fmt(c.price)}</span><span style={{fontSize:9,fontWeight:700,color:c.change>=0?t.grn:t.red}}>{c.change>=0?"+":""}{c.change.toFixed(2)}%</span></div></div>
+              <CStrip candles={c.candles} width={100} height={36} t={t}/>
+              <div style={{display:"flex",flexDirection:"column",gap:2}}><PPill pat={c.pat} t={t}/><div style={{display:"flex",alignItems:"center",gap:5}}><SBar sc={c.pat?c.pat.sc:null} t={t}/><DBadge dir={c.conf.direction} sm t={t}/></div></div>
+              <div style={{display:"flex",gap:3}}>
+                <button onClick={()=>window.open(aff[exch]+c.sym,"_blank")} style={{padding:"4px 8px",borderRadius:6,border:"1px solid "+t.grnB,background:t.grnDim,color:t.grn,fontSize:9,fontWeight:800,cursor:"pointer",fontFamily:FN,boxShadow:t.neuBtn,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:t.btnHi,pointerEvents:"none"}}/><span style={{position:"relative",zIndex:1}}>L</span></button>
+                <button onClick={()=>window.open(aff[exch]+c.sym,"_blank")} style={{padding:"4px 8px",borderRadius:6,border:"1px solid "+t.redB,background:t.redDim,color:t.red,fontSize:9,fontWeight:800,cursor:"pointer",fontFamily:FN,boxShadow:t.neuBtn,position:"relative",overflow:"hidden"}}><div style={{position:"absolute",top:0,left:0,right:0,height:"50%",background:t.btnHi,pointerEvents:"none"}}/><span style={{position:"relative",zIndex:1}}>S</span></button>
+              </div>
+            </div>)}
+            <div style={{padding:16,textAlign:"center"}}><p style={{fontSize:8,color:t.dimmer}}>Crypto Console Pro v2.1 \u2014 Educational purposes only. Not financial advice.</p></div>
+          </div>
+          :tab==="signals"?<SignalsTab coins={sorted} t={t}/>
+          :tab==="when"?<WhenTab coins={coins} fng={fng} t={t}/>
+          :tab==="patterns"?<PatternsTab coins={coins} t={t}/>
+          :tab==="heatmap"?<HeatmapTab coins={coins} fng={fng} t={t}/>
+          :tab==="arena"?<ArenaTab coins={coins} t={t}/>
+          :null}
+        </div>
+
+        {/* BOTTOM NAV */}
+        <div style={{display:"flex",justifyContent:"space-around",padding:"3px 0 7px",borderTop:"1px solid "+t.gBorder,background:t.glassNav,backdropFilter:"blur(16px)",WebkitBackdropFilter:"blur(16px)",flexShrink:0,position:"relative",zIndex:10}}>
+          {tabDef.map(tb=>{const TIc=tb.ic;const isAct=tab===tb.id;return <button key={tb.id} onClick={()=>setTab(tb.id)} style={{display:"flex",flexDirection:"column",alignItems:"center",gap:2,padding:"5px 0",background:"none",border:"none",cursor:"pointer",color:isAct?t.gold:t.dimmer,fontSize:7,fontWeight:isAct?700:500,fontFamily:FN,position:"relative",minWidth:36,transition:"color .2s"}}>
+            <TIc size={16} color={isAct?t.gold:t.dimmer} sw={isAct?2:1.5} style={{filter:isAct?"drop-shadow(0 0 4px "+t.goldGlow+")":"none",transition:"filter .2s"}}/>
+            {tb.l}
+            {tb.badge&&<span style={{position:"absolute",top:1,right:5,width:5,height:5,borderRadius:"50%",background:t.red}}/>}
+          </button>;})}
+        </div>
+
+        <style>{`::-webkit-scrollbar-thumb{background:${t.scrollThumb}}`}</style>
+      </div>;
+    }
+
+    // Mobile browser bottom bar fix
+    function fixVH(){document.documentElement.style.setProperty('--vh',window.innerHeight*.01+'px');}
+    fixVH();
+    window.addEventListener('resize',fixVH);
+
+    ReactDOM.createRoot(document.getElementById("root")).render(React.createElement(App));
+  </script>
 </body>
 </html>
