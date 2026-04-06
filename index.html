@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Crypto Console Pro | Futures Signal Dashboard</title>
+  <meta name="description" content="Real-time futures trading signals combining 14 live data streams from Binance, Bybit & OKX. LONG · SHORT · STAY OUT." />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ───── Header ───── -->
+  <header class="header">
+    <div class="header-left">
+      <span class="logo">⚡ Crypto Console Pro</span>
+      <span class="tagline">Multiple Streams. One Signal.</span>
+    </div>
+    <div class="header-right">
+      <div class="live-status">
+        <span class="status-dot" id="statusDot"></span>
+        <span class="status-text" id="statusText">Connecting…</span>
+      </div>
+      <div class="countdown-wrap">
+        Next update in <span class="countdown" id="countdown">20</span>s
+      </div>
+    </div>
+  </header>
+
+  <!-- ───── Stream Ticker ───── -->
+  <div class="stream-bar">
+    <div class="stream-bar-inner" id="streamBar">
+      <span class="stream-item">● Binance Futures Tickers</span>
+      <span class="stream-item">● Binance Funding Rates</span>
+      <span class="stream-item">● Binance Order Books</span>
+      <span class="stream-item">● Binance Open Interest</span>
+      <span class="stream-item">● Bybit Linear Tickers</span>
+      <span class="stream-item">● Bybit Funding Rates</span>
+      <span class="stream-item">● Bybit Order Books</span>
+      <span class="stream-item">● Bybit Open Interest</span>
+      <span class="stream-item">● OKX Swap Tickers</span>
+      <span class="stream-item">● OKX Funding Rates</span>
+      <span class="stream-item">● OKX Order Books</span>
+      <span class="stream-item">● OKX Open Interest</span>
+      <span class="stream-item">● Cross-Exchange Consensus</span>
+      <span class="stream-item">● Aggregate Signal Score</span>
+    </div>
+  </div>
+
+  <!-- ───── Legend ───── -->
+  <div class="legend">
+    <div class="legend-item">
+      <span class="badge badge--long">LONG</span>
+      <span class="legend-desc">Strong bullish consensus across exchanges</span>
+    </div>
+    <div class="legend-item">
+      <span class="badge badge--short">SHORT</span>
+      <span class="legend-desc">Strong bearish consensus across exchanges</span>
+    </div>
+    <div class="legend-item">
+      <span class="badge badge--stay">STAY OUT</span>
+      <span class="legend-desc">Mixed / insufficient signal — wait for clarity</span>
+    </div>
+    <div class="legend-item legend-item--right">
+      <label class="toggle-wrap">
+        <input type="checkbox" id="autoRefreshToggle" checked />
+        <span class="toggle-label">Auto-refresh</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- ───── Dashboard Grid ───── -->
+  <main class="dashboard" id="dashboard">
+    <div class="loading-overlay" id="loadingOverlay">
+      <div class="spinner"></div>
+      <p>Fetching live data from 3 exchanges…</p>
+    </div>
+  </main>
+
+  <!-- ───── Pro Locked Coins ───── -->
+  <section class="pro-section" id="proSection" style="display:none">
+    <h2 class="pro-title">🔒 Unlock Pro — More Coins, More Exchanges, Advanced Filters</h2>
+    <div class="pro-grid" id="proGrid"></div>
+    <div class="pro-cta">
+      <a href="https://cryptoconsole.app" class="pro-btn" target="_blank" rel="noopener">Unlock Pro →</a>
+    </div>
+  </section>
+
+  <!-- ───── Footer ───── -->
+  <footer class="footer">
+    <div class="footer-left">
+      Data streams: <strong>Binance</strong> · <strong>Bybit</strong> · <strong>OKX</strong> · Updates every 20 s
+    </div>
+    <div class="footer-right">
+      Free for all traders ·
+      <a class="footer-link" href="https://cryptoconsole.app" target="_blank" rel="noopener">Unlock Pro →</a>
+    </div>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
